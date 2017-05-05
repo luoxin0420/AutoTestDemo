@@ -28,62 +28,83 @@ CONFIG.fileConfig(myglobal.CONFIGURATONINI)
 TEMPPATH = r'../temp/'
 
 
-def get_device_info(dname,dport,my_logger):
-    global DEVICENAME, PORT, LOGGER
+def init_install_app(uid):
+
+    try:
+        pkg = CONFIG.getValue(uid,'apppackage')
+        result = library.find_package(uid)
+        if result.find(pkg) != -1:
+            library.app_operation(DEVICENAME,'UNINSTALL')
+    except Exception,ex:
+        print ex
+
+    #install new build
+    local_path = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
+    mobile_path = CONFIG.getValue(DEVICENAME,'mobile_app_path')
+    #library.device_file_operation(DEVICENAME,'PUSH',local_path,mobile_path)
+    app_path = os.path.join(mobile_path,CONFIG.getValue(DEVICENAME,'app'))
+    library.app_operation(DEVICENAME,'INSTALL',app_path)
+
+
+def get_device_info(dname,dport,loggerobj,logfname):
+
+    global DEVICENAME, PORT, LOGGER,IMAGEPATH
+
     DEVICENAME = dname
     PORT = dport
-    LOGGER = my_logger
+    LOGGER = loggerobj
+    IMAGEPATH = os.path.join(os.path.dirname(logfname),'image')
+    if not os.path.isdir(IMAGEPATH):
+        os.makedirs(IMAGEPATH)
+
+    init_install_app(DEVICENAME)
 
 
 class TestScheduleTasks(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(self):
+    # @classmethod
+    # def setUpClass(self):
+    #
+    #     desired_caps = {}
+    #     desired_caps['platformName'] = CONFIG.getValue(DEVICENAME,'platformName')
+    #     desired_caps['platformVersion'] = CONFIG.getValue(DEVICENAME,'platformVersion')
+    #     desired_caps['deviceName'] = DEVICENAME
+    #     desired_caps['app'] = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
+    #     #desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
+    #     #desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
+    #     self.driver = webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
+
+    # @classmethod
+    # def tearDownClass(self):
+    #     self.driver.quit()
+
+    def setUp(self):
 
         desired_caps = {}
         desired_caps['platformName'] = CONFIG.getValue(DEVICENAME,'platformName')
         desired_caps['platformVersion'] = CONFIG.getValue(DEVICENAME,'platformVersion')
         desired_caps['deviceName'] = DEVICENAME
-        desired_caps['app'] = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
-        #desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
-        #desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
+        #desired_caps['app'] = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
+        desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
+        desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
         self.driver = webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
-
-    @classmethod
-    def tearDownClass(self):
-        self.driver.quit()
-
-    def setUp(self):
-
+        sleep(15)
         self.log_name = None
         self.log_path = None
         self.log_object = None
         self.log_reader = None
-        self.app_path = '/data/local/tmp/420log.apk'
+        #self.app_path = '/data/local/tmp/420log.apk'
         LOGGER.debug('Start testing')
 
     def tearDown(self):
         self.driver.close_app()
-
-    def init_install_app(self):
-        try:
-            if not self.driver.is_app_installed(CONFIG.getValue(DEVICENAME,'appPackage')):
-                sleep(15)
-                LOGGER.debug('Package is not found, then install')
-                if not self.driver.is_app_installed(CONFIG.getValue(DEVICENAME,'appPackage')):
-                    library.app_operation(DEVICENAME,'INSTALL',self.app_path)
-            try:
-                self.log_in_application()
-            except Exception, ex:
-                print ex
-        except Exception,ex:
-            print ex
+        self.driver.quit()
 
     def log_in_application(self):
 
         try:
-            self.driver.start_activity(CONFIG.getValue(DEVICENAME,'appPackage'),CONFIG.getValue(DEVICENAME,'appActivity'))
-            sleep(15)
+            #self.driver.start_activity(CONFIG.getValue(DEVICENAME,'appPackage'),'com.vlife/.SplashActivity')
+
             self.driver.find_element_by_id('com.vlife:id/btn_login').click()
             sleep(3)
             self.driver.find_element_by_id('com.vlife:id/guide_info').click()
@@ -108,18 +129,23 @@ class TestScheduleTasks(unittest.TestCase):
         self.log_reader.stop()
         self.log_object.close()
 
-    def test_01_log_in(self):
-
-        self.dump_log_start()
-        self.log_in_application()
-        self.dump_log_stop()
-        keyword = 'jabber:iq:register'
-        result = dumplog.keywordFilter(self.log_path,DEVICENAME,keyword,LOGGER)
-        self.assertEqual(True,result)
+    # def test_01_log_in(self):
+    #
+    #     self.dump_log_start()
+    #     self.log_in_application()
+    #     #temp = unittest.TestCase.id()
+    #     base_name = '01_log_in' + '.png'
+    #     img_name = os.path.join(IMAGEPATH,base_name)
+    #     self.driver.get_screenshot_as_file(img_name)
+    #     self.dump_log_stop()
+    #     keyword = 'jabber:iq:register'
+    #     result = dumplog.keywordFilter(self.log_path,DEVICENAME,keyword,LOGGER)
+    #     self.assertEqual(True,result)
 
     def test_02_network_connection_update(self):
 
-        self.init_install_app()
+        #self.init_install_app()
+        self.log_in_application()
         orig_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+orig_uid)
 
@@ -142,14 +168,13 @@ class TestScheduleTasks(unittest.TestCase):
         library.wifi_operation(DEVICENAME,'ON')
         sleep(3)
         library.update_android_time(DEVICENAME)
-        sleep(5)
+        sleep(10)
         self.dump_log_stop()
         cur_uid = dumplog.getUserID(self.log_path,DEVICENAME,LOGGER)
         self.assertEqual(orig_uid,cur_uid)
 
     def test_03_clearcache_uid_update(self):
 
-        self.init_install_app()
         sleep(5)
         orig_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+orig_uid)
@@ -162,11 +187,16 @@ class TestScheduleTasks(unittest.TestCase):
         # sleep(10)
 
         # install and read file
-        self.init_install_app()
+        library.app_operation(DEVICENAME,'LAUNCH')
+        sleep(10)
+        self.log_in_application()
         sleep(5)
         cur_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+cur_uid)
-        self.assertNotEqual(orig_uid,cur_uid)
+        if cur_uid != '':
+            self.assertNotEqual(orig_uid,cur_uid)
+        else:
+            self.assertIsNot(cur_uid,'')
 
 if __name__ == '__main__':
 

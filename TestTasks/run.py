@@ -114,12 +114,12 @@ if __name__ == '__main__':
 
     try:
 
-        filename,my_logger = library.create_logger(uid)
+        filename,test_logger = library.create_logger(uid)
         fileobj = file(filename,'a+')
         status, appium_process = library.launch_appium(uid, port, bport)
         pid = appium_process.pid
         if status == "READY":
-            test_schedule.get_device_info(uid,port,my_logger)
+            test_schedule.get_device_info(uid,port,test_logger,filename)
             suite = unittest.TestLoader().loadTestsFromTestCase(test_module)
             unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
     except Exception, ex:

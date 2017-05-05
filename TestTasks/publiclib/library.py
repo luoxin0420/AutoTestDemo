@@ -25,52 +25,6 @@ CONFIG = configuration.configuration()
 CONFIG.fileConfig(myglobal.CONFIGURATONINI)
 
 
-def locate_element(driver, locate_string):
-
-    parameters = locate_string.split('--')
-    element = None
-
-    try:
-
-        if len(parameters) < 2:
-            elements = driver.find_elements_by_id(parameters[0])
-        else:
-            if parameters[1] == 'CLASS':
-                elements = driver.find_elements_by_class_name(parameters[0])
-        try:
-            if len(elements) < 2:
-                element = elements[0]
-            elif len(elements) >= int(parameters[2]):
-                element = elements[parameters[2]]
-        except:
-            element = elements[0]
-    except Exception,ex:
-
-        print ex
-
-    return element
-
-
-def locate_elements(driver, locate_string):
-
-    parameters = locate_string.split('--')
-    elements = None
-
-    try:
-
-        if len(parameters) < 2:
-            elements = driver.find_elements_by_id(parameters[0])
-        else:
-            if parameters[1] == 'CLASS':
-                elements = driver.find_elements_by_class_name(parameters[0])
-
-    except Exception,ex:
-
-        print ex
-
-    return elements
-
-
 def send_mail(subj, att):
 
     smtp_server = CONFIG.getValue("Report","smtp")
@@ -120,6 +74,20 @@ def wifi_operation(uid, action):
         print ex
 
 
+def device_file_operation(uid, action, orig_path, dest_path):
+
+    if action == "PULL":
+        cmd = "".join(["adb -s ", uid, " pull ",orig_path," ",dest_path])
+    if action == "PUSH":
+        cmd = "".join(["adb -s ", uid, " push ",orig_path," ", dest_path])
+
+    try:
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p.wait()
+    except Exception,ex:
+        print ex
+
+
 def app_operation(uid,action,path=''):
 
     pkg = CONFIG.getValue(uid,'apppackage')
@@ -150,6 +118,15 @@ def shellPIPE(cmd):
 
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
+    return out
+
+
+def find_package(uid):
+
+    out = ''
+    pkg = CONFIG.getValue(uid,'apppackage')
+    cmd = "".join(["adb -s ", uid, " shell pm list package ", pkg])
+    out = shellPIPE(cmd)
     return out
 
 
@@ -210,12 +187,14 @@ def get_connected_devices():
 def create_logger(device_name):
 
     cur_date = datetime.datetime.now().strftime("%Y%m%d")
-    parent_path = ''.join(["log/", cur_date])
-    if not os.path.isdir(parent_path):
-        os.mkdir(parent_path)
-
     now = datetime.datetime.now().strftime("%Y%m%d%H%M")
-    filename = ''.join([parent_path, '/', device_name, '_', now, "test.log"])
+    parent_path = os.path.join('log',cur_date,device_name,now)
+
+    # create multi layer directory
+    if not os.path.isdir(parent_path):
+        os.makedirs(parent_path)
+
+    filename = os.path.join(parent_path,"testlog.txt")
     logger = logging.getLogger("VlifeTest")
     formatter = logging.Formatter('%(name)-12s %(asctime)s %(levelname)-8s %(message)s', '%a, %d %b %Y %H:%M:%S',)
     file_handler = logging.FileHandler(filename)

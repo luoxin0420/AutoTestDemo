@@ -1,0 +1,24 @@
+test_01_log_in (testcases.test_schedule.ScheduleTasksTests) ... VlifeTest    Thu, 27 Apr 2017 17:57:49 DEBUG    Start testing
+VlifeTest    Thu, 27 Apr 2017 17:58:19 DEBUG    filter file path:E:\MyProjects\TestTasks\temp\HC37VW903116_201704271757log_filter.log
+ok
+test_02_network_connection_update (testcases.test_schedule.ScheduleTasksTests) ... VlifeTest    Thu, 27 Apr 2017 17:58:20 DEBUG    Start testing
+VlifeTest    Thu, 27 Apr 2017 17:58:20 DEBUG    Get user id from userinfo.xml:3337988376194091
+VlifeTest    Thu, 27 Apr 2017 17:58:31 DEBUG    Get current user id:
+FAIL
+test_03_clearcache_uid_update (testcases.test_schedule.ScheduleTasksTests) ... VlifeTest    Thu, 27 Apr 2017 17:58:31 DEBUG    Start testing
+VlifeTest    Thu, 27 Apr 2017 17:58:36 DEBUG    Get user id from userinfo.xml:3337988376194091
+VlifeTest    Thu, 27 Apr 2017 17:58:58 DEBUG    Get user id from userinfo.xml:
+ok
+
+======================================================================
+FAIL: test_02_network_connection_update (testcases.test_schedule.ScheduleTasksTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "E:\MyProjects\TestTasks\testcases\test_schedule.py", line 146, in test_02_network_connection_update
+    self.assertEqual(orig_uid,cur_uid)
+AssertionError: '3337988376194091' != ''
+
+----------------------------------------------------------------------
+Ran 3 tests in 80.875s
+
+FAILED (failures=1)

@@ -10,7 +10,7 @@
 + 被测手机需要ROOT（脚本中尽量使用SHELL命令代替手机的点击动作，为了保证SHELL命令成功执行，所以要ROOT)
 ### 脚本结构
 
-![image](https://github.com/xuxhTest/TestTasks/blob/master/raw/master/screetshots/structure.PNG)
+![image](https://github.com/xuxhTest/AutoTestDemo/blob/master/TestTasks/raw/master/screetshots/structure.PNG)
 
 + testcases/test_schedule.py: 测试用例是继承了unittest.TestCase,与操作流程相关的公共方法也会放在对应的文件中
 + public/*: 根据功能不同的不同，把一些通用的方法封装成类以支持测试用例的执行

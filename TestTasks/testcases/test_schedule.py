@@ -28,7 +28,7 @@ CONFIG.fileConfig(myglobal.CONFIGURATONINI)
 TEMPPATH = r'../temp/'
 
 
-def init_install_app(uid):
+def install_app(uid):
 
     try:
         pkg = CONFIG.getValue(uid,'apppackage')
@@ -41,12 +41,12 @@ def init_install_app(uid):
     #install new build
     local_path = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
     mobile_path = CONFIG.getValue(DEVICENAME,'mobile_app_path')
-    #library.device_file_operation(DEVICENAME,'PUSH',local_path,mobile_path)
+    library.device_file_operation(DEVICENAME,'PUSH',local_path,mobile_path)
     app_path = os.path.join(mobile_path,CONFIG.getValue(DEVICENAME,'app'))
     library.app_operation(DEVICENAME,'INSTALL',app_path)
 
 
-def get_device_info(dname,dport,loggerobj,logfname):
+def init_device_environment(dname,dport,loggerobj,logfname):
 
     global DEVICENAME, PORT, LOGGER,IMAGEPATH
 
@@ -57,7 +57,7 @@ def get_device_info(dname,dport,loggerobj,logfname):
     if not os.path.isdir(IMAGEPATH):
         os.makedirs(IMAGEPATH)
 
-    init_install_app(DEVICENAME)
+    install_app(DEVICENAME)
 
 
 class TestScheduleTasks(unittest.TestCase):
@@ -87,34 +87,44 @@ class TestScheduleTasks(unittest.TestCase):
         #desired_caps['app'] = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
         desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
         desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
-        self.driver = webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
-        sleep(15)
+        self.driver= webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
+        sleep(10)
+        
         self.log_name = None
         self.log_path = None
         self.log_object = None
         self.log_reader = None
-        #self.app_path = '/data/local/tmp/420log.apk'
         LOGGER.debug('Start testing')
 
     def tearDown(self):
+
         self.driver.close_app()
         self.driver.quit()
+        sleep(2)
 
     def log_in_application(self):
 
+        # if don't log in at first, will directly access to main screen, so try to do twice click
         try:
             #self.driver.start_activity(CONFIG.getValue(DEVICENAME,'appPackage'),'com.vlife/.SplashActivity')
-
             self.driver.find_element_by_id('com.vlife:id/btn_login').click()
             sleep(3)
+        except Exception,ex:
+            try:
+                self.driver.find_element_by_id('com.vlife:id/guide_go_text').click()
+                sleep(3)
+            except Exception,ex:
+                LOGGER.debug(ex)
+        try:
             self.driver.find_element_by_id('com.vlife:id/guide_info').click()
-            sleep(3)
-            height = self.driver.get_window_size()['height']
-            width = self.driver.get_window_size()['width']
-            self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
             sleep(3)
         except Exception,ex:
             LOGGER.debug(ex)
+
+        height = self.driver.get_window_size()['height']
+        width = self.driver.get_window_size()['width']
+        self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
+        sleep(3)
 
     def dump_log_start(self):
 
@@ -129,22 +139,21 @@ class TestScheduleTasks(unittest.TestCase):
         self.log_reader.stop()
         self.log_object.close()
 
-    # def test_01_log_in(self):
-    #
-    #     self.dump_log_start()
-    #     self.log_in_application()
-    #     #temp = unittest.TestCase.id()
-    #     base_name = '01_log_in' + '.png'
-    #     img_name = os.path.join(IMAGEPATH,base_name)
-    #     self.driver.get_screenshot_as_file(img_name)
-    #     self.dump_log_stop()
-    #     keyword = 'jabber:iq:register'
-    #     result = dumplog.keywordFilter(self.log_path,DEVICENAME,keyword,LOGGER)
-    #     self.assertEqual(True,result)
+    def test_01_log_in(self):
+
+        self.dump_log_start()
+        self.log_in_application()
+        #temp = unittest.TestCase.id()
+        base_name = '01_log_in' + '.png'
+        img_name = os.path.join(IMAGEPATH,base_name)
+        self.driver.get_screenshot_as_file(img_name)
+        self.dump_log_stop()
+        keyword = 'jabber:iq:register'
+        result = dumplog.keywordFilter(self.log_path,DEVICENAME,keyword,LOGGER)
+        self.assertEqual(True,result)
 
     def test_02_network_connection_update(self):
 
-        #self.init_install_app()
         self.log_in_application()
         orig_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+orig_uid)
@@ -159,7 +168,6 @@ class TestScheduleTasks(unittest.TestCase):
         # sleep(2)
         # print ConnectionType(self.driver.network_connection).name
         # self.driver.set_network_connection(ConnectionType.WIFI_ONLY)
-        library.app_operation(DEVICENAME,'LAUNCH')
         self.driver.close_app()
         sleep(2)
         self.dump_log_start()
@@ -197,6 +205,8 @@ class TestScheduleTasks(unittest.TestCase):
             self.assertNotEqual(orig_uid,cur_uid)
         else:
             self.assertIsNot(cur_uid,'')
+
+
 
 if __name__ == '__main__':
 

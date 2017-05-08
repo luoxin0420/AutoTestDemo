@@ -15,6 +15,7 @@ from email.MIMEText import MIMEText
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 import re
+import tempfile
 
 import configuration
 import myglobal
@@ -68,6 +69,7 @@ def wifi_operation(uid, action):
     if action == "ON":
         cmd = "".join(["adb -s ",uid," shell svc wifi enable "])
     try:
+
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         p.wait()
     except Exception,ex:
@@ -76,13 +78,15 @@ def wifi_operation(uid, action):
 
 def device_file_operation(uid, action, orig_path, dest_path):
 
-    if action == "PULL":
+    if action.upper() == "PULL":
         cmd = "".join(["adb -s ", uid, " pull ",orig_path," ",dest_path])
-    if action == "PUSH":
+    if action.upper() == "PUSH":
         cmd = "".join(["adb -s ", uid, " push ",orig_path," ", dest_path])
 
     try:
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_temp = tempfile.SpooledTemporaryFile(bufsize=10*1000)
+        fileno = out_temp.fileno()
+        p = subprocess.Popen(cmd, shell=True, stdout=fileno, stderr=subprocess.STDOUT)
         p.wait()
     except Exception,ex:
         print ex
@@ -238,7 +242,8 @@ def close_all_nodes():
 if __name__ == '__main__':
 
     #temp = get_userid_from_file('HC37VW903116')
-    out = update_android_time('HC37VW903116')
+    #out = update_android_time('HC37VW903116')
+    device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
     pass
 
 

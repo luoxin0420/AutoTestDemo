@@ -1,1 +1,3 @@
-__author__ = 'Administrator'
+__author__ = 'Xuxh'
+
+__all__ =['test_schedule']

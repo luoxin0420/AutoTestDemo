@@ -28,36 +28,18 @@ CONFIG.fileConfig(myglobal.CONFIGURATONINI)
 TEMPPATH = r'../temp/'
 
 
-def install_app(uid):
-
-    try:
-        pkg = CONFIG.getValue(uid,'apppackage')
-        result = library.find_package(uid)
-        if result.find(pkg) != -1:
-            library.app_operation(DEVICENAME,'UNINSTALL')
-    except Exception,ex:
-        print ex
-
-    #install new build
-    local_path = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
-    mobile_path = CONFIG.getValue(DEVICENAME,'mobile_app_path')
-    library.device_file_operation(DEVICENAME,'PUSH',local_path,mobile_path)
-    app_path = os.path.join(mobile_path,CONFIG.getValue(DEVICENAME,'app'))
-    library.app_operation(DEVICENAME,'INSTALL',app_path)
-
-
-def init_device_environment(dname,dport,loggerobj,logfname):
+def init_device_environment(dname,dport,logfname):
 
     global DEVICENAME, PORT, LOGGER,IMAGEPATH
 
     DEVICENAME = dname
     PORT = dport
-    LOGGER = loggerobj
+    LOGGER = library.create_logger(logfname)
     IMAGEPATH = os.path.join(os.path.dirname(logfname),'image')
     if not os.path.isdir(IMAGEPATH):
         os.makedirs(IMAGEPATH)
 
-    install_app(DEVICENAME)
+    library.init_app(DEVICENAME)
 
 
 class TestScheduleTasks(unittest.TestCase):
@@ -124,7 +106,9 @@ class TestScheduleTasks(unittest.TestCase):
         height = self.driver.get_window_size()['height']
         width = self.driver.get_window_size()['width']
         self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
-        sleep(3)
+        sleep(5)
+
+        #
 
     def dump_log_start(self):
 
@@ -205,7 +189,6 @@ class TestScheduleTasks(unittest.TestCase):
             self.assertNotEqual(orig_uid,cur_uid)
         else:
             self.assertIsNot(cur_uid,'')
-
 
 
 if __name__ == '__main__':

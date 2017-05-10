@@ -1,3 +1,4 @@
+# coding=utf-8
 __author__ = 'Xuxh'
 
 import os
@@ -16,15 +17,21 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 import re
 import tempfile
+from time import sleep
+from uiautomator import Device
+import threading
+
 
 import configuration
 import myglobal
+import self_uiautomator
 
-
+PATH = lambda p: os.path.abspath(
+    os.path.join(os.path.dirname(__file__), p)
+)
 
 CONFIG = configuration.configuration()
 CONFIG.fileConfig(myglobal.CONFIGURATONINI)
-
 
 def send_mail(subj, att):
 
@@ -134,9 +141,79 @@ def find_package(uid):
     return out
 
 
-def update_android_time(uid):
+def handle_popup_windows(nub,device):
+
+    for i in range(nub):
+        d = Device(device)
+        el1 = d(text=u"安装")
+        el2 = d(text=u"信息")
+        e13 = d(text=u"允许")
+        if el1.exists:
+            el1.click()
+        if el2.exists:
+            el2.click()
+        if e13.exists:
+            e13.click()
+        sleep(1)
+
+
+def do_popup_windows(nub,device):
+
+    find_text = [u"安装",u"允许",u"跳过"]
+
+    for i in range(nub):
+        self_uiautomator.click_popup_window(device,find_text)
+
+
+def uninstall_app(uid):
+
+    try:
+        pkg = CONFIG.getValue(uid,'apppackage')
+        result =find_package(uid)
+        if result.find(pkg) != -1:
+            app_operation(uid,'UNINSTALL')
+    except Exception,ex:
+        print ex
+
+
+def install_app(uid,app_path):
+
+
+    app_operation(uid,'INSTALL',app_path)
+    sleep(2)
+    app_operation(uid,'LAUNCH')
+    sleep(2)
+    app_operation(uid,'CLOSE')
+
+
+def init_app(uid):
+
+    uninstall_app(uid)
+    # get path of app
+    local_path = PATH('../apps/' + CONFIG.getValue(uid,'app'))
+    mobile_path = CONFIG.getValue(uid,'mobile_app_path')
+    device_file_operation(uid,'PUSH',local_path,mobile_path)
+    app_path = os.path.join(mobile_path,CONFIG.getValue(uid,'app'))
+
+    try:
+        threads = []
+        install = threading.Thread(target=install_app, args=(uid,app_path))
+        proc_process = threading.Thread(target=do_popup_windows, args=(10,uid))
+        threads.append(install)
+        threads.append(proc_process)
+        for t in threads:
+            t.setDaemon(True)
+            t.start()
+            sleep(1)
+        t.join()
+    except Exception,ex:
+        print ex
+
+
+def update_android_time(uid, interval):
 
     interval_num = CONFIG.getValue(uid, 'frequence_num')
+    interval_num = int(interval_num) + int(interval)
     interval_unit = CONFIG.getValue(uid, 'frequence_unit')
 
     # get android time, then get expected time stamp
@@ -188,7 +265,21 @@ def get_connected_devices():
     return devices
 
 
-def create_logger(device_name):
+def create_logger(filename):
+
+    logger = logging.getLogger("VlifeTest")
+    formatter = logging.Formatter('%(name)-12s %(asctime)s %(levelname)-8s %(message)s', '%a, %d %b %Y %H:%M:%S',)
+    file_handler = logging.FileHandler(filename)
+    file_handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler(sys.stderr)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+    logger.setLevel(logging.DEBUG)
+
+    return logger
+
+
+def get_log_name(device_name):
 
     cur_date = datetime.datetime.now().strftime("%Y%m%d")
     now = datetime.datetime.now().strftime("%Y%m%d%H%M")
@@ -199,15 +290,8 @@ def create_logger(device_name):
         os.makedirs(parent_path)
 
     filename = os.path.join(parent_path,"testlog.txt")
-    logger = logging.getLogger("VlifeTest")
-    formatter = logging.Formatter('%(name)-12s %(asctime)s %(levelname)-8s %(message)s', '%a, %d %b %Y %H:%M:%S',)
-    file_handler = logging.FileHandler(filename)
-    file_handler.setFormatter(formatter)
-    stream_handler = logging.StreamHandler(sys.stderr)
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-    logger.setLevel(logging.DEBUG)
-    return filename,logger
+
+    return filename
 
 
 def launch_appium(uid, port, bport):
@@ -239,11 +323,13 @@ def close_all_nodes():
     time.sleep(1)
 
 
+
 if __name__ == '__main__':
 
     #temp = get_userid_from_file('HC37VW903116')
     #out = update_android_time('HC37VW903116')
-    device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
+    #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
+    handle_popup_windows(5,'82e2aaad')
     pass
 
 

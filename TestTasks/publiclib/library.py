@@ -210,10 +210,9 @@ def init_app(uid):
         print ex
 
 
-def update_android_time(uid, interval):
+def update_android_time(uid):
 
     interval_num = CONFIG.getValue(uid, 'frequence_num')
-    interval_num = int(interval_num) + int(interval)
     interval_unit = CONFIG.getValue(uid, 'frequence_unit')
 
     # get android time, then get expected time stamp

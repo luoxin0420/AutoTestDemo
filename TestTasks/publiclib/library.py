@@ -110,7 +110,7 @@ def app_operation(uid,action,path=''):
         if action == "LAUNCH":
             cmd = "".join(["adb -s ", uid, " shell am start -n ", pname])
         if action == "CLOSE":
-            cmd = "".join(["adb -s ", uid, " shell am force-stop ", pname])
+            cmd = "".join(["adb -s ", uid, " shell am force-stop ", pkg])
         if action == "INSTALL":
             cmd = "".join(["adb -s ", uid, " shell pm install -f ", path])
         if action == "CLEAR":
@@ -183,7 +183,7 @@ def install_app(uid,app_path):
     sleep(2)
     app_operation(uid,'LAUNCH')
     sleep(2)
-    app_operation(uid,'CLOSE')
+
 
 
 def init_app(uid):
@@ -198,16 +198,18 @@ def init_app(uid):
     try:
         threads = []
         install = threading.Thread(target=install_app, args=(uid,app_path))
-        proc_process = threading.Thread(target=do_popup_windows, args=(10,uid))
+        proc_process = threading.Thread(target=do_popup_windows, args=(5,uid))
         threads.append(install)
         threads.append(proc_process)
         for t in threads:
             t.setDaemon(True)
             t.start()
-            sleep(1)
+            sleep(5)
         t.join()
     except Exception,ex:
         print ex
+
+    app_operation(uid,'CLOSE')
 
 
 def update_android_time(uid):

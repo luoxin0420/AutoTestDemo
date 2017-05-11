@@ -2,7 +2,6 @@
 __author__ = 'Xuxh'
 
 import tempfile
-import os
 import re
 import time
 import xml.etree.cElementTree as ET
@@ -22,10 +21,8 @@ class Element(object):
 
         # get control tree of current activity
         cmd = "adb -s {0} shell uiautomator dump /data/local/tmp/uidump.xml".format(self.uid)
-        #os.popen("adb shell uiautomator dump /data/local/tmp/uidump.xml")
         library.shellPIPE(cmd)
         cmd = "adb -s {0} pull /data/local/tmp/uidump.xml {1}".format(self.uid,self.tempFile)
-        #os.popen("adb pull /data/local/tmp/uidump.xml " + self.tempFile)
         library.shellPIPE(cmd)
 
     def __element(self, attrib, name):
@@ -85,13 +82,11 @@ class Event(object):
 
     def __init__(self,uid):
         self.uid = uid
-        #os.popen("adb wait-for-device ")
         cmd = "adb -s {0} wait-for-device ".format(self.uid)
         library.shellPIPE(cmd)
 
     def touch(self, dx, dy):
 
-        #os.popen("adb shell input tap " + str(dx) + " " + str(dy))
         cmd = "adb -s {0} shell input tap {1} {2}".format(self.uid,str(dx),str(dy))
         library.shellPIPE(cmd)
         time.sleep(0.5)

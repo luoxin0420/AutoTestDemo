@@ -1,3 +1,4 @@
+# coding=utf-8
 __author__ = 'Xuxh'
 
 
@@ -15,6 +16,7 @@ from TestTasks.publiclib import configuration
 from TestTasks.publiclib import myglobal
 from TestTasks.publiclib import library
 from TestTasks.publiclib import filterlogcat as dumplog
+from TestTasks.publiclib import self_uiautomator
 
 
 # Returns abs path relative to this file and not cwd
@@ -70,7 +72,7 @@ class TestScheduleTasks(unittest.TestCase):
         desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
         desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
         self.driver= webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
-        sleep(10)
+        sleep(2)
         
         self.log_name = None
         self.log_path = None
@@ -85,6 +87,13 @@ class TestScheduleTasks(unittest.TestCase):
         sleep(2)
 
     def log_in_application(self):
+
+        # maybe popup window is exist, contain text u'跳过'
+        try:
+            self.driver.find_element_by_id('com.vlife:id/btn_skip').click()
+            sleep(1)
+        except Exception,ex:
+            print ex
 
         # if don't log in at first, will directly access to main screen, so try to do twice click
         try:
@@ -106,9 +115,16 @@ class TestScheduleTasks(unittest.TestCase):
         height = self.driver.get_window_size()['height']
         width = self.driver.get_window_size()['width']
         self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
+        sleep(3)
+        # For some devices, maybe popup permission window
+        for i in range(5):
+            try:
+                self.driver.find_element_by_id('com.android.packageinstaller:id/permission_allow_button').click()
+                sleep(1)
+            except Exception,ex:
+                print ex
         sleep(5)
 
-        #
 
     def dump_log_start(self):
 

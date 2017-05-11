@@ -237,9 +237,9 @@ def update_android_time(uid,delta):
     else:
         expe_time = cur_time + datetime.timedelta(days=interval_num)
     #time_stamp = time.mktime(expe_time.timetuple())
-    out = get_os_version(uid)
+    version = get_os_version(uid)
 
-    if out < 6:
+    if version < 6:
         expe_time = datetime.datetime.strftime(expe_time,'%Y%m%d.%H%M%S')
         cmd = 'adb -s {0} shell su 0 date -s {1} '.format(uid,expe_time)
     else:

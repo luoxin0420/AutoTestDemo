@@ -124,6 +124,15 @@ def app_operation(uid,action,path=''):
         except Exception,ex:
             print ex
 
+def get_os_version(uid):
+
+    cmd = "".join(["adb -s ", uid, " shell getprop ro.build.version.release "])
+    out = shellPIPE(cmd).split('.')
+
+    if len(out) > 0:
+        return int(out[0])
+    else:
+        return 0
 
 def shellPIPE(cmd):
 
@@ -228,12 +237,15 @@ def update_android_time(uid,delta):
     else:
         expe_time = cur_time + datetime.timedelta(days=interval_num)
     #time_stamp = time.mktime(expe_time.timetuple())
-    expe_time = datetime.datetime.strftime(expe_time,'%Y%m%d.%H%M%S')
+    out = get_os_version(uid)
 
-    #  adb shell date $(date +%m%d%H%M%Y), set random date
-    # set new time on mobile
-    #cmd = 'adb -s {0} shell date {1} ; am broadcast -a android.intent.action.TIME_SET'.format(uid,time_stamp) # not working
-    cmd = 'adb -s {0} shell su 0 date -s {1} '.format(uid,expe_time)
+    if out < 6:
+        expe_time = datetime.datetime.strftime(expe_time,'%Y%m%d.%H%M%S')
+        cmd = 'adb -s {0} shell su 0 date -s {1} '.format(uid,expe_time)
+    else:
+        expe_time = datetime.datetime.strftime(expe_time,'%m%d%H%M%Y.00')
+        cmd = 'adb -s {0} shell date {1} ; am broadcast -a android.intent.action.TIME_SET'.format(uid,expe_time)
+
     out = shellPIPE(cmd)
 
 
@@ -330,7 +342,7 @@ def close_all_nodes():
 if __name__ == '__main__':
 
     #temp = get_userid_from_file('HC37VW903116')
-    out = update_android_time('ZX1G22B7LM',-1)
+    out = update_android_time('048bf08709e8fe68',-1)
     #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
 
 

@@ -114,8 +114,11 @@ class TestScheduleTasks(unittest.TestCase):
 
         height = self.driver.get_window_size()['height']
         width = self.driver.get_window_size()['width']
-        self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
-        sleep(3)
+        if int(height) > 2000:
+            self.driver.swipe(int(width/2),int(height/2+300),int(width/2), int(height/2-500), 1000)
+        else:
+            self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
+        sleep(2)
         # For some devices, maybe popup permission window
         for i in range(5):
             try:
@@ -123,8 +126,8 @@ class TestScheduleTasks(unittest.TestCase):
                 sleep(1)
             except Exception,ex:
                 print ex
+                break
         sleep(5)
-
 
     def dump_log_start(self):
 
@@ -175,7 +178,7 @@ class TestScheduleTasks(unittest.TestCase):
         sleep(1)
         library.wifi_operation(DEVICENAME,'ON')
         sleep(3)
-        library.update_android_time(DEVICENAME)
+        library.update_android_time(DEVICENAME,0)
         sleep(10)
         self.dump_log_stop()
         cur_uid = dumplog.getUserID(self.log_path,DEVICENAME,LOGGER)

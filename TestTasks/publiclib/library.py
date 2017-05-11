@@ -212,20 +212,21 @@ def init_app(uid):
     app_operation(uid,'CLOSE')
 
 
-def update_android_time(uid):
+def update_android_time(uid,delta):
 
-    interval_num = CONFIG.getValue(uid, 'frequence_num')
+    interval_num = int(CONFIG.getValue(uid, 'frequence_num')) + int(delta)
     interval_unit = CONFIG.getValue(uid, 'frequence_unit')
 
     # get android time, then get expected time stamp
     cmd = "".join(["adb -s ", uid, " shell date +%Y%m%d.%H%M%S "])
-    out = shellPIPE(cmd).replace('\r\r\n', '')
-
+    out = shellPIPE(cmd)
+    for char in ['\r','\n']:
+        out = out.replace(char,'')
     cur_time = datetime.datetime.strptime(out,'%Y%m%d.%H%M%S')
     if interval_unit.lower() == 'hour':
-        expe_time = cur_time + datetime.timedelta(hours=int(interval_num))
+        expe_time = cur_time + datetime.timedelta(hours=interval_num)
     else:
-        expe_time = cur_time + datetime.timedelta(days=int(interval_num))
+        expe_time = cur_time + datetime.timedelta(days=interval_num)
     #time_stamp = time.mktime(expe_time.timetuple())
     expe_time = datetime.datetime.strftime(expe_time,'%Y%m%d.%H%M%S')
 
@@ -242,8 +243,9 @@ def get_userid_from_file(devicename):
     out = shellPIPE(cmd)
     keyword = r'.* <string name="uid">(.*)</string>.*'
     content = re.compile(keyword)
-    out1 = out.replace('\r\r\n','')
-    m = content.match(out1)
+    for char in ['\r','\n']:
+        out = out.replace(char,'')
+    m = content.match(out)
     if m:
         userid = m.group(1)
     else:
@@ -328,7 +330,7 @@ def close_all_nodes():
 if __name__ == '__main__':
 
     #temp = get_userid_from_file('HC37VW903116')
-    #out = update_android_time('HC37VW903116')
+    out = update_android_time('ZX1G22B7LM',-1)
     #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
     handle_popup_windows(5,'82e2aaad')
     pass

@@ -18,7 +18,7 @@ from email.MIMEBase import MIMEBase
 import re
 import tempfile
 from time import sleep
-from uiautomator import Device
+#from uiautomator import Device
 import threading
 
 
@@ -141,20 +141,20 @@ def find_package(uid):
     return out
 
 
-def handle_popup_windows(nub,device):
-
-    for i in range(nub):
-        d = Device(device)
-        el1 = d(text=u"安装")
-        el2 = d(text=u"信息")
-        e13 = d(text=u"允许")
-        if el1.exists:
-            el1.click()
-        if el2.exists:
-            el2.click()
-        if e13.exists:
-            e13.click()
-        sleep(1)
+# def handle_popup_windows(nub,device):
+#
+#     for i in range(nub):
+#         d = Device(device)
+#         el1 = d(text=u"安装")
+#         el2 = d(text=u"信息")
+#         e13 = d(text=u"允许")
+#         if el1.exists:
+#             el1.click()
+#         if el2.exists:
+#             el2.click()
+#         if e13.exists:
+#             e13.click()
+#         sleep(1)
 
 
 def do_popup_windows(nub,device):

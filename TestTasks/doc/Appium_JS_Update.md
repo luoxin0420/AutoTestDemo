@@ -31,4 +31,4 @@ Appium每次session start时，都会安装unlock and appium-setting apk, 考虑
 ../ node_modules/appium/lib/devices/android/android.js
 
 //this.pushSettingsApp.bind(this), 
-//this.pushUnlock.bind(this)
+//this.pushUnlock.bind(this),

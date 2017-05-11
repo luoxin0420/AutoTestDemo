@@ -214,6 +214,7 @@ def init_app(uid):
 
 def update_android_time(uid,delta):
 
+    # delta is interval time, like 1, -2
     interval_num = int(CONFIG.getValue(uid, 'frequence_num')) + int(delta)
     interval_unit = CONFIG.getValue(uid, 'frequence_unit')
 

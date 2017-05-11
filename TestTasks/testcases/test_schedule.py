@@ -161,16 +161,6 @@ class TestScheduleTasks(unittest.TestCase):
         orig_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+orig_uid)
 
-        # change network status
-        #value = self.driver.network_connection()
-        # get network
-        # 0=None 1=Airplane 2=wifi 4=data 6=all network on
-        #self.driver.network_connection # it would return int type, like 0, 1, 2, 4, 6
-        # print ConnectionType(self.driver.network_connection).name
-        # self.driver.set_network_connection(ConnectionType.NO_CONNECTION)
-        # sleep(2)
-        # print ConnectionType(self.driver.network_connection).name
-        # self.driver.set_network_connection(ConnectionType.WIFI_ONLY)
         self.driver.close_app()
         sleep(2)
         self.dump_log_start()

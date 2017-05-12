@@ -87,7 +87,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     try:
-
+        pid = 0
         filename = library.get_log_name(uid)
         config.setValue(uid,'logname',filename)
         fileobj = file(filename,'a+')

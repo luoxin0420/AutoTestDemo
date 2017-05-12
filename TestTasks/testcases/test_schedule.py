@@ -10,13 +10,13 @@ except(ImportError):
 from appium import webdriver
 from time import sleep
 from datetime import datetime
-from appium.webdriver.connectiontype import ConnectionType
+
 
 from TestTasks.publiclib import configuration
 from TestTasks.publiclib import myglobal
 from TestTasks.publiclib import library
 from TestTasks.publiclib import filterlogcat as dumplog
-from TestTasks.publiclib import self_uiautomator
+from TestTasks.publiclib import uiaction
 
 
 # Returns abs path relative to this file and not cwd
@@ -35,6 +35,7 @@ def init_device_environment(dname,dport,logfname):
     global DEVICENAME, PORT, LOGGER,IMAGEPATH
 
     DEVICENAME = dname
+
     PORT = dport
     LOGGER = library.create_logger(logfname)
     IMAGEPATH = os.path.join(os.path.dirname(logfname),'image')
@@ -64,14 +65,14 @@ class TestScheduleTasks(unittest.TestCase):
 
     def setUp(self):
 
-        desired_caps = {}
-        desired_caps['platformName'] = CONFIG.getValue(DEVICENAME,'platformName')
-        desired_caps['platformVersion'] = CONFIG.getValue(DEVICENAME,'platformVersion')
-        desired_caps['deviceName'] = DEVICENAME
+        self.desired_caps = {}
+        self.desired_caps['platformName'] = CONFIG.getValue(DEVICENAME,'platformName')
+        self.desired_caps['platformVersion'] = CONFIG.getValue(DEVICENAME,'platformVersion')
+        self.desired_caps['deviceName'] = DEVICENAME
         #desired_caps['app'] = PATH('../apps/' + CONFIG.getValue(DEVICENAME,'app'))
-        desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
-        desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
-        self.driver= webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',desired_caps)
+        self.desired_caps['appPackage'] = CONFIG.getValue(DEVICENAME,'appPackage')
+        self.desired_caps['appActivity'] = CONFIG.getValue(DEVICENAME,'appActivity')
+        self.driver= webdriver.Remote('http://127.0.0.1:' + str(PORT) +'/wd/hub',self.desired_caps)
         sleep(2)
         
         self.log_name = None
@@ -86,48 +87,95 @@ class TestScheduleTasks(unittest.TestCase):
         self.driver.quit()
         sleep(2)
 
+    def exec_ui_action(self,ele_tag,act='click'):
+
+        result = False
+        uiconfig = configuration.configuration()
+        uiconfig.fileConfig(myglobal.CONFIGUI)
+        # get config value and create element direct
+        value =uiconfig.getValue(DEVICENAME,ele_tag)
+        uia = uiaction.UIAction(DEVICENAME,self.driver)
+        element = uia.find_element(value)
+
+        if act == 'click' and ( not element is None):
+            uia.find_element(value).click()
+            sleep(4)
+            result = True
+
+        return result
+
     def log_in_application(self):
 
-        # maybe popup window is exist, contain text u'跳过'
         try:
-            self.driver.find_element_by_id('com.vlife:id/btn_skip').click()
-            sleep(1)
+            self.exec_ui_action('GuidePag_Persimmion_Setting')
+            sleep(6)
+            # maybe popup window is exist, contain text u'跳过'
+            self.exec_ui_action('GuidePage_Skip')
+            # if don't log in at first, will directly access to main screen, so try to do twice click
+            result = self.exec_ui_action('GuidePage_StartUp')
+            if not result:
+               self.exec_ui_action('GuidePage_StartUp_Alias')
+            self.exec_ui_action('GuidePage_Info')
         except Exception,ex:
             print ex
 
-        # if don't log in at first, will directly access to main screen, so try to do twice click
-        try:
-            #self.driver.start_activity(CONFIG.getValue(DEVICENAME,'appPackage'),'com.vlife/.SplashActivity')
-            self.driver.find_element_by_id('com.vlife:id/btn_login').click()
-            sleep(3)
-        except Exception,ex:
-            try:
-                self.driver.find_element_by_id('com.vlife:id/guide_go_text').click()
-                sleep(3)
-            except Exception,ex:
-                LOGGER.debug(ex)
-        try:
-            self.driver.find_element_by_id('com.vlife:id/guide_info').click()
-            sleep(3)
-        except Exception,ex:
-            LOGGER.debug(ex)
-
+        # swipe screen
         height = self.driver.get_window_size()['height']
         width = self.driver.get_window_size()['width']
-        if int(height) > 2000:
-            self.driver.swipe(int(width/2),int(height/2+300),int(width/2), int(height/2-500), 1000)
-        else:
-            self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
+        self.driver.swipe(int(width/2),int(height/2),int(width/2), int(height/4), 1000)
         sleep(2)
+
         # For some devices, maybe popup permission window
         for i in range(5):
-            try:
-                self.driver.find_element_by_id('com.android.packageinstaller:id/permission_allow_button').click()
-                sleep(1)
-            except Exception,ex:
-                print ex
+            result = self.exec_ui_action('GuidePage_Permission')
+            if result:
                 break
+
+        # wait for main window refresh
         sleep(5)
+
+    # def log_in_application(self):
+    #
+    #     # maybe popup window is exist, contain text u'跳过'
+    #     try:
+    #         self.driver.find_element_by_id('com.vlife:id/btn_skip').click()
+    #         sleep(1)
+    #     except Exception,ex:
+    #         print ex
+    #
+    #     # if don't log in at first, will directly access to main screen, so try to do twice click
+    #     try:
+    #         #self.driver.start_activity(CONFIG.getValue(DEVICENAME,'appPackage'),'com.vlife/.SplashActivity')
+    #         self.driver.find_element_by_id('com.vlife:id/btn_login').click()
+    #         sleep(3)
+    #     except Exception,ex:
+    #         try:
+    #             self.driver.find_element_by_id('com.vlife:id/guide_go_text').click()
+    #             sleep(3)
+    #         except Exception,ex:
+    #             LOGGER.debug(ex)
+    #     try:
+    #         self.driver.find_element_by_id('com.vlife:id/guide_info').click()
+    #         sleep(3)
+    #     except Exception,ex:
+    #         LOGGER.debug(ex)
+    #
+    #     height = self.driver.get_window_size()['height']
+    #     width = self.driver.get_window_size()['width']
+    #     if int(height) > 2000:
+    #         self.driver.swipe(int(width/2),int(height/2+300),int(width/2), int(height/2-500), 1000)
+    #     else:
+    #         self.driver.swipe(int(width/2),int(height/2+200),int(width/2), int(height/2-300), 500)
+    #     sleep(2)
+    #     # For some devices, maybe popup permission window
+    #     for i in range(5):
+    #         try:
+    #             self.driver.find_element_by_id('com.android.packageinstaller:id/permission_allow_button').click()
+    #             sleep(1)
+    #         except Exception,ex:
+    #             print ex
+    #             break
+    #     sleep(5)
 
     def dump_log_start(self):
 
@@ -166,10 +214,12 @@ class TestScheduleTasks(unittest.TestCase):
         self.dump_log_start()
         library.wifi_operation(DEVICENAME,'OFF')
         sleep(1)
-        library.wifi_operation(DEVICENAME,'ON')
-        sleep(3)
         library.update_android_time(DEVICENAME,0)
         sleep(10)
+        library.wifi_operation(DEVICENAME,'ON')
+        sleep(3)
+        self.driver.start_activity(self.desired_caps['appPackage'],self.desired_caps['appActivity'])
+        self.log_in_application()
         self.dump_log_stop()
         cur_uid = dumplog.getUserID(self.log_path,DEVICENAME,LOGGER)
         self.assertEqual(orig_uid,cur_uid)

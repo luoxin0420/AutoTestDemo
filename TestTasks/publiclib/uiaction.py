@@ -11,34 +11,67 @@ class UIAction(object):
 
         self.uid = uid
         self.driver = driver
+        self.type = {'ID':1, 'CLASS':2, 'NAME':3, 'XPATH':4}
 
-    def find_element(self,element):
+    def __get_element_dict(self,config_value):
 
-        if element['GroupFlag'] != 1:
+        """
+        config_value likes 'xx1-xx2-xx3-xx4', xx1 indicates locate method
+        xx1: locate method
+        xx2: group flag, if there are multiple elements with same value, it's value is 1, otherwise, it's 0
+        xx3: if xx2=1, xx3 indicates index value. if xx2=0, then xx3 is empty
+        xx4: value for locate elemen
+        the following is example: ID:0::com.vlife:id/btn_skip
+        """
 
-            els={
-                1: lambda: self.driver.find_element(By.ID, element['Value']),
-                2: lambda: self.driver.find_element(By.CLASS_NAME, element['Value']),
-                3: lambda: self.driver.find_element(By.NAME, element['Value']),
-                4: lambda: self.driver.find_element(By.XPATH, element['Value'])
-           }[element['LOCATE_TYPE_id']]()
+        elem_dict = {}
+        dict_value = config_value.split('-')
+        if len(dict_value) == 4:
+            try:
+                typeID = self.type[str(dict_value[0]).upper()]
+                dict_value[0] = typeID
+                dict_key = ['Locate_Type_ID','GroupFlag','Index','Value']
+                elem_dict = dict(zip(dict_key,dict_value))
+            except Exception,ex:
+                print ex
+                return {}
 
-        elif element['GroupFlag'] == 1 and element['index'] !=999:
+        return elem_dict
 
-            els={
-                1: lambda: self.driver.find_elements(By.ID, element['Value'])[element['index']],
-                2: lambda: self.driver.find_elements(By.CLASS_NAME, element['Value'])[element['index']],
-                3: lambda: self.driver.find_elements(By.NAME, element['Value'])[element['index']],
-                4: lambda: self.driver.find_elements(By.XPATH, element['Value'])[element['index']]
-            }[element['LOCATE_TYPE_id']]()
+    def find_element(self,config_value):
 
-        else:
-            els={
-                1: lambda: self.driver.find_elements(By.ID, element['Value']),
-                2: lambda: self.driver.find_elements(By.CLASS_NAME, element['Value']),
-                3: lambda: self.driver.find_elements(By.NAME, element['Value']),
-                4: lambda: self.driver.find_elements(By.XPATH, element['Value'])
-           }[element['LOCATE_TYPE_id']]()
+        els = None
+        element = self.__get_element_dict(config_value)
+
+        if element != {}:
+            try:
+                if element['GroupFlag'] != 1:
+
+                    els={
+                        1: lambda: self.driver.find_element(By.ID, element['Value']),
+                        2: lambda: self.driver.find_element(By.CLASS_NAME, element['Value']),
+                        3: lambda: self.driver.find_element(By.NAME, element['Value']),
+                        4: lambda: self.driver.find_element(By.XPATH, element['Value'])
+                   }[element['Locate_Type_ID']]()
+
+                elif element['GroupFlag'] == 1 and element['Index'] !=999:
+
+                    els={
+                        1: lambda: self.driver.find_elements(By.ID, element['Value'])[element['index']],
+                        2: lambda: self.driver.find_elements(By.CLASS_NAME, element['Value'])[element['index']],
+                        3: lambda: self.driver.find_elements(By.NAME, element['Value'])[element['index']],
+                        4: lambda: self.driver.find_elements(By.XPATH, element['Value'])[element['index']]
+                    }[element['Locate_Type_ID']]()
+
+                else:
+                    els={
+                        1: lambda: self.driver.find_elements(By.ID, element['Value']),
+                        2: lambda: self.driver.find_elements(By.CLASS_NAME, element['Value']),
+                        3: lambda: self.driver.find_elements(By.NAME, element['Value']),
+                        4: lambda: self.driver.find_elements(By.XPATH, element['Value'])
+                   }[element['Locate_Type_ID']]()
+            except Exception,ex:
+                print ex
 
         return els
 
@@ -122,4 +155,7 @@ class UIAction(object):
 
 if __name__ == '__main__':
 
-    pass
+    mydriver = 0
+    temp = UIAction('abc',mydriver)
+    value = temp.find_element('ID-0--com.android.packageinstaller:id/continue_button')
+    print value

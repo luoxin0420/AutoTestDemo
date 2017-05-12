@@ -20,6 +20,7 @@ import tempfile
 from time import sleep
 #from uiautomator import Device
 import threading
+import platform
 
 
 import configuration
@@ -89,6 +90,8 @@ def device_file_operation(uid, action, orig_path, dest_path):
         cmd = "".join(["adb -s ", uid, " pull ",orig_path," ",dest_path])
     if action.upper() == "PUSH":
         cmd = "".join(["adb -s ", uid, " push ",orig_path," ", dest_path])
+    if action.upper()== "DELETE":
+        cmd = "".join(["adb -s ", uid, " shell rm ",orig_path])
 
     try:
         out_temp = tempfile.SpooledTemporaryFile(bufsize=10*1000)
@@ -97,6 +100,11 @@ def device_file_operation(uid, action, orig_path, dest_path):
         p.wait()
     except Exception,ex:
         print ex
+
+
+def get_desktop_os_type():
+
+    return platform.system()
 
 
 def app_operation(uid,action,path=''):
@@ -134,11 +142,34 @@ def get_os_version(uid):
     else:
         return 0
 
+
 def shellPIPE(cmd):
 
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     return out
+
+
+def get_screen_size(uid):
+
+    width = 0
+    height = 0
+    # cmd = "adb shell dumpsys window displays |head -n 3" (linux)
+    # this command is supported above android 4.3, wm tool must be installed
+    cmd = "".join(["adb -s ", uid, " shell wm size"])
+    out = shellPIPE(cmd).split(':')
+    if len(out) > 1:
+        width, height = out[1].strip().split('x')
+    return int(width),int(height)
+
+
+def emulate_swipe_action(uid):
+
+    # get resolution of screen
+    width,height = get_screen_size(uid)
+    cmd = "adb -s {0} shell input swipe {1} {2} {3} {4}".format(uid,int(width/2),int(height/2),int(width/2),int(height/4))
+    shellPIPE(cmd)
+    sleep(2)
 
 
 def find_package(uid):
@@ -168,10 +199,11 @@ def find_package(uid):
 
 def do_popup_windows(nub,device):
 
-    find_text = [u"安装",u"允许",u"跳过"]
+    find_text = [u"安装",u"允许",u"跳过",u"继续",u"开启",u"欢迎"]
 
     for i in range(nub):
         self_uiautomator.click_popup_window(device,find_text)
+        emulate_swipe_action(device)
 
 
 def uninstall_app(uid):
@@ -206,7 +238,7 @@ def init_app(uid):
     try:
         threads = []
         install = threading.Thread(target=install_app, args=(uid,app_path))
-        proc_process = threading.Thread(target=do_popup_windows, args=(5,uid))
+        proc_process = threading.Thread(target=do_popup_windows, args=(6,uid))
         threads.append(install)
         threads.append(proc_process)
         for t in threads:
@@ -218,6 +250,8 @@ def init_app(uid):
         print ex
 
     app_operation(uid,'CLOSE')
+    # delete APK file on mobile
+    device_file_operation(uid,'DELETE',app_path,'')
 
 
 def update_android_time(uid,delta):
@@ -341,8 +375,8 @@ def close_all_nodes():
 
 if __name__ == '__main__':
 
-    #temp = get_userid_from_file('HC37VW903116')
-    out = update_android_time('048bf08709e8fe68',0)
+    #out = update_android_time('048bf08709e8fe68',0)
+    emulate_swipe_action('H536X60101234567')
     #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
 
 

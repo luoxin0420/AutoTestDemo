@@ -342,7 +342,7 @@ def close_all_nodes():
 if __name__ == '__main__':
 
     #temp = get_userid_from_file('HC37VW903116')
-    out = update_android_time('048bf08709e8fe68',-1)
+    out = update_android_time('048bf08709e8fe68',-2)
     #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
 
 

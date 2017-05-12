@@ -253,6 +253,26 @@ def init_app(uid):
     # delete APK file on mobile
     device_file_operation(uid,'DELETE',app_path,'')
 
+def screen_on_off(uid, screen_action):
+    sysstr = platform.system()
+    if(sysstr=="Windows"):
+       cmd = "".join(["adb -s ", uid, " shell dumpsys power | findstr  ","Display"])
+    elif(sysstr=="Linux"):
+       cmd = "".join(["adb -s ", uid, " shell dumpsys power | grep  ","Display"])
+    else:
+        cmd=""
+
+    if(cmd!=""):
+        out = shellPIPE(cmd)
+        #print out
+        if(screen_action=="ON") :
+           while(out.find("state=OFF") != -1):
+                   cmd = "".join(["adb -s ", uid, " shell input keyevent 26"])
+                   out = shellPIPE(cmd)
+        elif(screen_action=="OFF"):
+              while(out.find("state=ON") != -1):
+                   cmd = "".join(["adb -s ", uid, " shell input keyevent 26"])
+                   out = shellPIPE(cmd)
 
 def update_android_time(uid,delta):
 
@@ -377,6 +397,7 @@ if __name__ == '__main__':
 
     #out = update_android_time('048bf08709e8fe68',0)
     emulate_swipe_action('H536X60101234567')
+    #screen_on_off('LRMRY5MNHEZP4LBU', 'OFF')
     #device_file_operation('HC37VW903116','PUSH', r'E:\AutoTestDemo\TestTasks\apps\420log.apk', '/data/local/tmp/')
 
 

@@ -103,7 +103,7 @@ class TestScheduleTasks(unittest.TestCase):
             result = True
 
         return result
-
+    #点击跳过后，点击启动按钮，上滑解锁，授权
     def log_in_application(self):
 
         try:
@@ -189,7 +189,7 @@ class TestScheduleTasks(unittest.TestCase):
 
         self.log_reader.stop()
         self.log_object.close()
-
+    #首次启动app后，抓取log验证是否正常发送并接收注册协议包
     def test_01_log_in(self):
 
         self.dump_log_start()
@@ -202,9 +202,9 @@ class TestScheduleTasks(unittest.TestCase):
         keyword = 'jabber:iq:register'
         result = dumplog.keywordFilter(self.log_path,DEVICENAME,keyword,LOGGER)
         self.assertEqual(True,result)
-
+    #触发定期联网后，关闭再打开app，查看Uid是否相同
     def test_02_network_connection_update(self):
-
+        sleep(6)
         self.log_in_application()
         orig_uid = library.get_userid_from_file(DEVICENAME)
         LOGGER.debug('Get user id from userinfo.xml:'+orig_uid)
@@ -213,9 +213,9 @@ class TestScheduleTasks(unittest.TestCase):
         sleep(2)
         self.dump_log_start()
         library.wifi_operation(DEVICENAME,'OFF')
-        sleep(1)
+        sleep(2)
         library.update_android_time(DEVICENAME,0)
-        sleep(10)
+        sleep(16)
         library.wifi_operation(DEVICENAME,'ON')
         sleep(3)
         self.driver.start_activity(self.desired_caps['appPackage'],self.desired_caps['appActivity'])
@@ -223,7 +223,7 @@ class TestScheduleTasks(unittest.TestCase):
         self.dump_log_stop()
         cur_uid = dumplog.getUserID(self.log_path,DEVICENAME,LOGGER)
         self.assertEqual(orig_uid,cur_uid)
-
+    #清除app缓存数据后，再启动app，查看uid是否发生变化
     def test_03_clearcache_uid_update(self):
 
         sleep(5)

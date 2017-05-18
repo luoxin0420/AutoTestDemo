@@ -107,6 +107,6 @@ def click_popup_window(uid,findstr):
 if __name__ == '__main__':
 
     click_popup_window('82e2aaad',[u"信息"])
-
+    # print
     # e2 = element.findElementByName(u"信息")
     # evevt.touch(e2[0], e2[1])

@@ -10,6 +10,7 @@ from time import sleep
 import platform
 import os
 from os import path
+
 import configuration
 import myglobal
 

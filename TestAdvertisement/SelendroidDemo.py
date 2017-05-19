@@ -11,14 +11,17 @@ import datetime
 
 from library import device
 from logger import log
-from library import myglobal
 from library import desktop
 from library import configuration
 from library import logcat
 from library import pJson
+from library import myglobal
+
 
 CONFIG = configuration.configuration()
+print os.path.abspath(myglobal.CONFIGURATONINI)
 CONFIG.fileConfig(myglobal.CONFIGURATONINI)
+
 
 def start_service():
 
@@ -30,15 +33,16 @@ def start_service():
     sleep(wtime)
 
 
-def detect_logcat(out):
+def detect_logcat(out,durtation):
 
     data = ''
     result = False
 
-    log = logcat.DumpLogcatFileReader(out,my_device.uid,'com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
-    log.start()
-    time.sleep(20)
-    log.stop()
+    # log = logcat.DumpLogcatFileReader(out,my_device.uid,'com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
+    # log.start()
+    # time.sleep(durtation)
+    # log.stop()
+    out = r'E:\AutoTestDemo\TestAdvertisement\log\20170519\860BCMK22LD8\201705191542\out.log'
     plog = logcat.ParseLogcat(out)
     data = plog.get_complete_jsondata('responseDataJson:')
 
@@ -50,28 +54,36 @@ def detect_logcat(out):
 
 def download_data(data,logpath):
 
-    temp = pJson.parseJson(data)
-    value = temp.extract_element_value('l[0].a.d.fa')
-    url = 'http://stage.3gmimo.com/handpet/' + value[0]
-    print url
-
+    # create download path
     now = datetime.datetime.now().strftime("%H%M%S")
     parent_path = os.path.join(logpath,now)
-
     # create multi layer directory
     if not os.path.isdir(parent_path):
         os.makedirs(parent_path)
-    download_file = os.path.join(parent_path,'download.zip')
-    desktop.download_data(url, download_file)
 
-    desktop.unzip_file(download_file,parent_path)
+    # get url and download image file
+    jsonData = pJson.parseJson(data)
+    link = CONFIG.getValue(my_device.uid,'adv_url')
+    value = jsonData.extract_element_value(link)
+    host = CONFIG.getValue('Common','host')
+    url = host + value[0][0]
+    # get file name
+    name = value[0][0].split('/')[-1][:-4]
+    image_file = os.path.join(parent_path,name)
+    desktop.download_data(url, image_file)
 
-    return parent_path
+    # get layout file
+    link = CONFIG.getValue(my_device.uid,'layout_url')
+    value = jsonData.extract_element_value(link)
+    url = host + value[0][0]
+    name = value[0][0].split('/')[-1]
+    layout = os.path.join(parent_path,name)
+    desktop.download_data(url, layout)
+
+    return image_file,layout
 
 
-def verify_image(fname, data,filepath):
-
-    parent_path = download_data(data,filepath)
+def verify_image(expc_img,actu_img,layout):
 
     result = True
 
@@ -175,46 +187,53 @@ if __name__ == '__main__':
     my_device = device.Device(uid)
     logname = desktop.get_log_name(uid, 'verify.html')
 
-    # create log
+    # create test log
     if not os.path.exists(logname):
         write_html_header(logname, 'Verify Advertisement')
     my_logger = log.Log(logname)
 
-    # start-up service and monitor logcat
-    out = os.path.join(os.path.abspath(logname),'out.log')
-    fileobj = open(out, 'w+')
-    monitor_logcat= logcat.DumpLogcatFileReader(fileobj, my_device.uid, 'com.vlife.mxlock.wallpaper:main','query_window_condition_list;responseDataJson')
-    monitor_logcat.start()
 
     #start_service()
 
     loop_number = 0
     TestFlag = True
-    dtime = CONFIG.getValue('Runtime','duration')
+    dtime = CONFIG.getValue('Common','duration')
+    dtime = int(dtime) * 60
+
+    # start-up service and monitor logcat
+    logpath = os.path.dirname(logname)
+    out = os.path.join(logpath,'out.log')
 
     while TestFlag:
 
-        result, data = detect_logcat(out,dtime)
-
+        my_logger.write('TEST_START','Start verifying advertisement ' + 'number:' + str(loop_number))
+        data, result = detect_logcat(out,dtime)
+        my_logger.write('TEST_DEBUG','Dump Window Data:' + data)
         if result:
-            my_logger.write('TEST_START','Start verify new advertisement')
-            fname = get_screenshots_name(logname,loop_number)
+            expc_image,layout = download_data(data, logpath)
+            temp = '<img src=\"' + os.path.abspath(expc_image) + '\" width=120 height=200 />'
+            my_logger.write('TEST_DEBUG','Expected Image:' + temp)
+
+            # get actual screenshots
+            actu_image = get_screenshots_name(logname,loop_number)
             my_device.app_operation('LAUNCH')
             sleep(1)
-            my_device.get_device_screenshot(fname)
-            temp = '<img src=\"' + fname + '\" width=120 height=200 />'
-            my_logger.write('TEST_DEBUG','Actual Screen:'+temp)
-            result = verify_image(fname,data,os.path.abspath(logname))
+            my_device.get_device_screenshot(actu_image)
+            temp = '<img src=\"' + actu_image + '\" width=120 height=200 />'
+            my_logger.write('TEST_DEBUG','Actual Screen:'+ temp)
+            result = verify_image(expc_image,actu_image,layout)
+
             if result:
                 my_logger.write('TEST_PASS','test is passed')
             else:
-                my_logger.write('TEST_PASS','test is failed')
+                my_logger.write('TEST_FAIL','test is failed')
 
             # access to the next cycle
             sleep(dtime)
         else:
             TestFlag = False
+            my_logger.write('TEST_FAIL','There is no response window data')
 
         loop_number += 1
 
-    monitor_logcat.stop()
+

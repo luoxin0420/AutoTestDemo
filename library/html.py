@@ -6,11 +6,11 @@ import urllib2
 import json
 import hashlib
 
-from poster.streaminghttp import StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler
-from poster.encode import multipart_encode
 import objectpath
 
-import myglobal
+from poster.streaminghttp import StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler
+from poster.encode import multipart_encode
+from TestAdvertisement import myglobal
 import db
 
 

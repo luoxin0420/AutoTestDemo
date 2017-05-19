@@ -166,17 +166,18 @@ class ParseLogcat(object):
 def main():
 
     fname = r'd:\temp3.txt'
-    log = DumpLogcatFileReader(fname, '860BCMK22LD8','com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
-    log.start()
-    time.sleep(20)
-    log.stop()
+    # log = DumpLogcatFileReader(fname, '860BCMK22LD8','com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
+    # log.start()
+    # time.sleep(20)
+    # log.stop()
 
     plog = ParseLogcat(fname)
     window_data = plog.get_complete_jsondata('responseDataJson:')
     print window_data
     temp = pJson.parseJson(window_data)
-    value = temp.extract_element_value('l[0].a.d.fa')
-    print value
+    value = temp.extract_element_value('l[0].b.z.ok_left_v_background')
+    print value[0]
+    name = value[0][0].split('/')[-1][:-4]
     url = 'http://stage.3gmimo.com/handpet/' + value[0]
     print url
     url = 'http://stage.3gmimo.com/handpet/' + 'f/z/214/19c69e51a58a92bc8cf4215cd470b66f.zip.pet'

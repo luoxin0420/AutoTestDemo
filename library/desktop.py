@@ -23,7 +23,6 @@ import zipfile
 import configuration
 import myglobal
 
-
 CONFIG = configuration.configuration()
 CONFIG.fileConfig(myglobal.CONFIGURATONINI)
 
@@ -81,7 +80,7 @@ def create_logger(filename):
 
     return logger
 
-#**********************
+
 def get_log_name(device_name,basename):
 
     cur_date = datetime.datetime.now().strftime("%Y%m%d")
@@ -144,6 +143,7 @@ def remove_sufix_name(full_name):
         newfile = os.path.join(dirpath,newname)
         os.rename(full_name,newfile)
 
+
 def unzip_file(fname,despath):
 
     zfile = zipfile.ZipFile(fname,'r')
@@ -152,7 +152,6 @@ def unzip_file(fname,despath):
         if f.endswith('/'):
             os.makedirs(f)
         else:
-            #zfile.extract(f)
             zfile.extract(f,despath)
 
 if __name__ == '__main__':

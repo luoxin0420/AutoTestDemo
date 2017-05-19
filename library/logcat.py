@@ -78,17 +78,11 @@ class DumpLogcatFileReader(threading.Thread):
 
         return cmd
 
-
     def stop(self):
         self._process.terminate()
         print 'wait for logcat stopped...'
         time.sleep(1)
 
-
-# def shellPIPE(cmd):
-#     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     out, err = p.communicate()
-#     return out
 
 class ParseLogcat(object):
 
@@ -133,78 +127,40 @@ class ParseLogcat(object):
 
         return json_data
 
+    def getUserID(self,fname):
 
+        userID = ''
+        keyword =r'.*<uid>(.*)</uid>.*'
+        content = re.compile(keyword)
+        try:
+            with open(fname) as file:
+                for line in file:
+                    m = content.match(line)
+                    if m:
+                        userID = m.group(1)
+                        break
+        except Exception,ex:
+            print ex
+        return userID
 
-# def readFile(filename):
-#     try:
-#         with open(filename) as file:
-#             for line in file:
-#                 return line
-#                 break
-#     except IOError as e:
-#         print e
-#
-#
-# def writeFile(filename, str):
-#
-#     file = open(filename,'w')
-#     file.write(str)
-#     file.close()
-#
-#
-# def keywordFilter(filename, devicename, keyword, logger):
-#
-#     count = 0
-#     pid = getProcessId(devicename)
-#     # Filter file and output to another file
-#     filteredFilename = filename.split('.')[0] + '_filter.log'
-#     filteredFile = open(filteredFilename, 'w+')
-#
-#     with open(filename) as file:
-#
-#         for line in file:
-#
-#             ll = line.split(' ')
-#             if pid != ll[2]:
-#                 continue
-#
-#             if line.lower().find(keyword.lower()) >= 0:
-#                 filteredFile.write(line)
-#                 count +=1
-#
-#     filteredFile.close()
-#     logger.debug('filter file path:' + filteredFilename)
-#
-#     if count > 0:
-#         return True
-#     else:
-#         return False
-#
-#
-# def getUserID(filename,devicename,logger):
-#
-#     userID = ''
-#     pid = getProcessId(devicename)
-#     keyword =r'.*<uid>(.*)</uid>.*'
-#     content = re.compile(keyword)
-#     try:
-#         with open(filename) as file:
-#
-#             for line in file:
-#
-#                 ll = line.split(' ')
-#                 if pid != ll[2]:
-#                     continue
-#                 m = content.match(line)
-#                 if m:
-#                     userID = m.group(1)
-#                     break
-#     except Exception,ex:
-#         print ex
-#
-#     logger.debug('Get current user id:' + userID)
-#
-#     return userID
+    def keywordFilter(self,fname, keyword):
+
+        count = 0
+
+        # Filter file and output to another file
+        filteredFilename = fname.split('.')[0] + '_filter.log'
+
+        with open(fname, 'r') as rfile, open(filteredFilename, 'w+') as wfile:
+
+            for line in rfile:
+                if line.lower().find(keyword.lower()) >= 0:
+                    wfile.write(line)
+                    count += 1
+
+        if count > 0:
+            return True, filteredFilename
+        else:
+            return False,filteredFilename
 
 
 def main():

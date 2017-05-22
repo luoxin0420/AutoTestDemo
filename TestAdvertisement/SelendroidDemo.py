@@ -16,6 +16,7 @@ from library import configuration
 from library import logcat
 from library import pJson
 from library import myglobal
+from library import imagemagick
 
 
 CONFIG = configuration.configuration()
@@ -84,6 +85,14 @@ def download_data(data,logpath):
 
 
 def verify_image(expc_img,actu_img,layout):
+
+    width, height = my_device.get_screen_size()
+    dpi = int(CONFIG.getValue(my_device.uid,'dpi'))
+    height2 = int(3 * dpi)
+    # resize image according to actual screenshot
+    fname = os.path.join(os.path.abspath(expc_image),'resize.jpg')
+    imagemagick.resize_image(expc_image,width,height2,fname)
+    result = imagemagick.detect_sub_image(fname,200,300,actu_image,width,height2,0,0)
 
     result = True
 

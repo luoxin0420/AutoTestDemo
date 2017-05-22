@@ -1,0 +1,25 @@
+运行脚本需要安装下面几个辅助工具，所以请先下载从TOOL文件夹
+
+### UnxUtils.zip
+
+解压缩这个folder, 然后填加'your path\UnxUtils\usr\local\wbin' 到环境变量path
+
+### gawk-3.1.6-1-bin.zip
+
+解压缩这个folder, 然后填加'your path\gawk-3.1.6-1-bin\bin' 到环境变量path
+
+### ImageMagick-7.0.5-6-Q16-x64-dll.exe
+
+这是个强大的图片编辑工具，安装这个工具。
+
+安装完成后，如果操作系统是WIN7及以前版本,还需要做以下两步：
+
++ 将 ImageMagick 的 convert.exe 前面加上 im_ ，变成 im_convert.exe 。因为Windows本身有 convert.exe，改名后避名发生冲突。
+
++ 打开 regedit.exe ，Search 'imagemagick' ，找到键值'AutoRun', 将其值改名为 im_convert.exe。
+
+![image](https://github.com/xuxhTest/AutoTestDemo/blob/master/TestTasks/raw/master/screetshots/js1.PNG)
+
+### advhelp.apk
+
+安装这个应用到待测手机

@@ -22,7 +22,7 @@ def execute_cmds(cmds,debug=False):
 
 def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
     cmds = [
-    'convert {}[{}x{}+{}+{}] {}'.format(img_path, width, height, x, y,
+    'im_convert {}[{}x{}+{}+{}] {}'.format(img_path, width, height, x, y,
                                         output_path)
     ]
     ret = execute_cmds(cmds)
@@ -31,7 +31,7 @@ def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
 
 def resize_image(img_path, width, height, output_path):
     cmds = [
-    'convert {} -resize {}x{} {}'.format(img_path, width, height, output_path)
+    'im_convert {} -resize {}x{} {}'.format(img_path, width, height, output_path)
     ]
     ret = execute_cmds(cmds)
     return ret
@@ -46,7 +46,17 @@ def identify_image(img_path):
 
 def make_image_gray(img_path, gray_img):
     cmds = [
-        'convert {} -type Grayscale -depth 4 {}'.format(img_path, gray_img),
+        'im_convert {} -type Grayscale -depth 4 {}'.format(img_path, gray_img),
+    ]
+    ret = execute_cmds(cmds)
+    return ret
+
+
+# just for separate transparent image, remove alpha
+def separate_image(orig_img,dest_img):
+
+    cmds = [
+        'im_convert {}  -background black -alpha remove {}'.format(orig_img, dest_img),
     ]
     ret = execute_cmds(cmds)
     return ret
@@ -104,3 +114,8 @@ def detect_sub_image(sub_img_path, sub_x, sub_y, search_img_path,
         return False
 
     return True
+
+if __name__ == '__main__':
+
+    resize_image(r'E:\test.png',1080,1475,r'E:\test9.png')
+    result = detect_sub_image(r'E:\test9.png',200,300,r'E:\screen0.png',1080,1475,0,0)

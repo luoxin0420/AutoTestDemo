@@ -5,6 +5,7 @@ __author__ = 'Xuxh'
 import subprocess
 
 
+
 def execute_cmds(cmds,debug=False):
 
     ret = ''
@@ -22,7 +23,7 @@ def execute_cmds(cmds,debug=False):
 
 def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
     cmds = [
-    'im_convert {}[{}x{}+{}+{}] {}'.format(img_path, width, height, x, y,
+    'im_convert {} -crop {}x{}+{}+{} {}'.format(img_path, width, height, x, y,
                                         output_path)
     ]
     ret = execute_cmds(cmds)
@@ -30,6 +31,7 @@ def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
 
 
 def resize_image(img_path, width, height, output_path):
+
     cmds = [
     'im_convert {} -resize {}x{} {}'.format(img_path, width, height, output_path)
     ]
@@ -44,7 +46,28 @@ def identify_image(img_path):
     return ret
 
 
+def overlap_image(orig_img, overlay_img, dest_img):
+
+    cmds = [
+    'im_convert {} -compose over {} -composite {}'.format(orig_img, overlay_img, dest_img)
+    ]
+
+    ret = execute_cmds(cmds)
+    return ret
+
+
+def add_backgound(orig_img,rgb_color,dest_img):
+
+    cmds = [
+    'im_convert {} -background {} -flatten {}'.format(orig_img, rgb_color, dest_img)
+    ]
+
+    ret = execute_cmds(cmds)
+    return ret
+
+
 def make_image_gray(img_path, gray_img):
+
     cmds = [
         'im_convert {} -type Grayscale -depth 4 {}'.format(img_path, gray_img),
     ]
@@ -69,14 +92,18 @@ def compare_image(actu_image,expe_image):
     'compare -metric AE -fuzz 20% {} {} similar.jpg'.format(actu_image, expe_image),
     ]
     ret = execute_cmds(cmds)
-    if ret.returncode != 0:
-        return False
-    else:
+
+    try:
+
         value = int(ret.stdout.readline())
-        if value < 2000:
+        if value < 1500:
             return True
-        else:
-            return False
+    except Exception,ex:
+        print ex
+
+    return False
+
+
 
 
 def detect_sub_image(sub_img_path, sub_x, sub_y, search_img_path,
@@ -117,5 +144,9 @@ def detect_sub_image(sub_img_path, sub_x, sub_y, search_img_path,
 
 if __name__ == '__main__':
 
-    resize_image(r'E:\test.png',1080,1475,r'E:\test9.png')
-    result = detect_sub_image(r'E:\test9.png',200,300,r'E:\screen0.png',1080,1475,0,0)
+    #resize_image(r'E:\test.png',1080,1475,r'E:\test9.png')
+    #result = detect_sub_image(r'E:\test9.png',200,300,r'E:\screen0.png',1080,1475,0,0)
+    img1 = r'E:\aimg.png'
+    img2 = r'E:\eimg.png'
+    result = compare_image(img1,img2)
+    print result

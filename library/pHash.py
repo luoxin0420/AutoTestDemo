@@ -161,8 +161,7 @@ if __name__ == '__main__':
     # for i in xrange(1, 7):
     #     print 'test_case_%d: %.3f%%'%(i, \
     #         calc_similar_by_path('testpic/TEST%d/%d.JPG'%(i, 1), 'testpic/TEST%d/%d.JPG'%(i, 2))*100)
-    img1 = Image.open('D:\\work\\AuthNumber\\verifylog\\oppo20160325\\image\\v.jpg')
-    img2 = Image.open('D:\\work\\AuthNumber\\verifylog\\oppo20160325\\image\\v_logo.jpg')
-
+    img1 = Image.open('E:\\test61.jpg')
+    img2 = Image.open('E:\\test81.jpg')
     value = classify_DCT(img1,img2)
     print value

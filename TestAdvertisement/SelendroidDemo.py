@@ -39,11 +39,11 @@ def detect_logcat(out,durtation):
     data = ''
     result = False
 
-    # log = logcat.DumpLogcatFileReader(out,my_device.uid,'com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
-    # log.start()
-    # time.sleep(durtation)
-    # log.stop()
-    out = r'E:\AutoTestDemo\TestAdvertisement\log\20170519\860BCMK22LD8\201705191542\out.log'
+    log = logcat.DumpLogcatFileReader(out,my_device.uid,'com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
+    log.start()
+    time.sleep(durtation)
+    log.stop()
+    #out = r'E:\AutoTestDemo\TestAdvertisement\log\20170523\860BCMK22LD8\201705231654\out.log'
     plog = logcat.ParseLogcat(out)
     data = plog.get_complete_jsondata('responseDataJson:')
 
@@ -55,6 +55,8 @@ def detect_logcat(out,durtation):
 
 def download_data(data,logpath):
 
+    image_file = ''
+    layout = ''
     # create download path
     now = datetime.datetime.now().strftime("%H%M%S")
     parent_path = os.path.join(logpath,now)
@@ -65,38 +67,63 @@ def download_data(data,logpath):
     # get url and download image file
     jsonData = pJson.parseJson(data)
     link = CONFIG.getValue(my_device.uid,'adv_url')
-    value = jsonData.extract_element_value(link)
-    host = CONFIG.getValue('Common','host')
-    url = host + value[0][0]
-    # get file name
-    name = value[0][0].split('/')[-1][:-4]
-    image_file = os.path.join(parent_path,name)
-    desktop.download_data(url, image_file)
+    value1 = jsonData.extract_element_value(link)
+    if len(value1[0]) > 0:
+        host = CONFIG.getValue('Common','host')
+        url = host + value1[0][0]
+        # get file name
+        name = value1[0][0].split('/')[-1][:-4]
+        image_file = os.path.join(parent_path,name)
+        desktop.download_data(url, image_file)
 
     # get layout file
     link = CONFIG.getValue(my_device.uid,'layout_url')
-    value = jsonData.extract_element_value(link)
-    url = host + value[0][0]
-    name = value[0][0].split('/')[-1]
-    layout = os.path.join(parent_path,name)
-    desktop.download_data(url, layout)
+    value2 = jsonData.extract_element_value(link)
+    if len(value2[0]) > 0:
+        url = host + value2[0][0]
+        name = value2[0][0].split('/')[-1]
+        layout = os.path.join(parent_path,name)
+        desktop.download_data(url, layout)
 
     return image_file,layout
 
 
 def verify_image(expc_img,actu_img,layout):
 
-    width, height = my_device.get_screen_size()
-    dpi = int(CONFIG.getValue(my_device.uid,'dpi'))
-    height2 = int(3 * dpi)
-    # resize image according to actual screenshot
-    fname = os.path.join(os.path.abspath(expc_image),'resize.jpg')
-    imagemagick.resize_image(expc_image,width,height2,fname)
-    result = imagemagick.detect_sub_image(fname,200,300,actu_image,width,height2,0,0)
+    value = False
+    try:
+        width, height = my_device.get_screen_size()
+        dpi = int(CONFIG.getValue(my_device.uid,'dpi'))
+        img_height = int(3 * dpi)
 
-    result = True
+        # resize expected image according to actual screen
+        exp_name = os.path.join(os.path.dirname(expc_image),'resize.png')
+        imagemagick.resize_image(expc_image,width,img_height,exp_name)
+        # crop advertisement image from snapshot
+        actu_name = os.path.join(os.path.dirname(expc_image),'crop.png')
+        imagemagick.crop_image(actu_image,width,img_height,0,0,actu_name)
 
-    return result
+        # crop a small 30x30 image from the center of image
+        eimg = os.path.join(os.path.abspath(os.path.dirname(expc_image)),'eimg.png')
+        aimg = os.path.join(os.path.abspath(os.path.dirname(expc_image)),'aimg.png')
+
+        imagemagick.crop_image(actu_name,30,30,int(width/2),int(img_height/2),aimg)
+        imagemagick.crop_image(exp_name,30,30,int(width/2),int(img_height/2),eimg)
+
+        # write log
+        temp = '<img src=\"' + eimg + '\" width=50 height=50 />'
+        my_logger.write('TEST_DEBUG','Expected Image:' + temp)
+        temp = '<img src=\"' + aimg + '\" width=50 height=50 />'
+        my_logger.write('TEST_DEBUG','Actual Image:' + temp)
+
+        # compare image
+        value = imagemagick.compare_image(aimg,eimg)
+
+    except Exception,ex:
+
+        print ex
+
+    return value
 
 
 def write_html_header(logname,title):
@@ -207,7 +234,7 @@ if __name__ == '__main__':
     loop_number = 0
     TestFlag = True
     dtime = CONFIG.getValue('Common','duration')
-    dtime = int(dtime) * 60
+    dtime = 300
 
     # start-up service and monitor logcat
     logpath = os.path.dirname(logname)
@@ -218,15 +245,16 @@ if __name__ == '__main__':
         my_logger.write('TEST_START','Start verifying advertisement ' + 'number:' + str(loop_number))
         data, result = detect_logcat(out,dtime)
         my_logger.write('TEST_DEBUG','Dump Window Data:' + data)
-        if result:
-            expc_image,layout = download_data(data, logpath)
+        expc_image,layout = download_data(data, logpath)
+
+        if result and expc_image != '':
             temp = '<img src=\"' + os.path.abspath(expc_image) + '\" width=120 height=200 />'
             my_logger.write('TEST_DEBUG','Expected Image:' + temp)
 
             # get actual screenshots
             actu_image = get_screenshots_name(logname,loop_number)
             my_device.app_operation('LAUNCH')
-            sleep(1)
+            sleep(2)
             my_device.get_device_screenshot(actu_image)
             temp = '<img src=\"' + actu_image + '\" width=120 height=200 />'
             my_logger.write('TEST_DEBUG','Actual Screen:'+ temp)
@@ -236,13 +264,15 @@ if __name__ == '__main__':
                 my_logger.write('TEST_PASS','test is passed')
             else:
                 my_logger.write('TEST_FAIL','test is failed')
-
-            # access to the next cycle
-            sleep(dtime)
         else:
-            TestFlag = False
             my_logger.write('TEST_FAIL','There is no response window data')
 
         loop_number += 1
+
+        if loop_number == 5:
+            TestFlag = False
+
+        # access to the next cycle
+        sleep(10)
 
 

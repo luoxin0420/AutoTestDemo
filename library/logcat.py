@@ -94,6 +94,7 @@ class ParseLogcat(object):
 
         Flag = False
         json_data = ''
+        prev_data = ''
 
         with open(self._fname,'r') as rfile:
             for line in rfile:
@@ -113,19 +114,23 @@ class ParseLogcat(object):
                         if match:
                             value = match.group(1)
                         json_data = json_data + str_text.split(value)[1]
+                        prev_data = json_data
                     else:
                         Flag = False
 
                 if str_text.lower().find(keyword.lower()) > 0:
 
                     if json_data != '':
+                        prev_data = json_data
                         json_data = ''
                     json_data = json_data + str_text.split(keyword)[1]
                     if str_text.find('**(1)**') > 0:
                         Flag = True
                         info_id = str_text[1:8]
+                    else:
+                        prev_data = json_data
 
-        return json_data
+        return prev_data
 
     def getUserID(self,fname):
 
@@ -165,7 +170,7 @@ class ParseLogcat(object):
 
 def main():
 
-    fname = r'd:\temp3.txt'
+    fname = r'E:\AutoTestDemo\TestAdvertisement\log\20170523\860BCMK22LD8\201705231531\out.log'
     # log = DumpLogcatFileReader(fname, '860BCMK22LD8','com.vlife.mxlock.wallpaper:main','4697956883387773100;query_window_condition_list')
     # log.start()
     # time.sleep(20)
@@ -175,16 +180,16 @@ def main():
     window_data = plog.get_complete_jsondata('responseDataJson:')
     print window_data
     temp = pJson.parseJson(window_data)
-    value = temp.extract_element_value('l[0].b.z.ok_left_v_background')
-    print value[0]
-    name = value[0][0].split('/')[-1][:-4]
-    url = 'http://stage.3gmimo.com/handpet/' + value[0]
-    print url
-    url = 'http://stage.3gmimo.com/handpet/' + 'f/z/214/19c69e51a58a92bc8cf4215cd470b66f.zip.pet'
-
-    desktop.download_data(url, r'd:\download.zip')
-
-    desktop.unzip_file(r'd:\download.zip',r'd:\\')
+    # value = temp.extract_element_value('l[0].b.z.ok_left_v_background')
+    # print value[0]
+    # name = value[0][0].split('/')[-1][:-4]
+    # url = 'http://stage.3gmimo.com/handpet/' + value[0]
+    # print url
+    # url = 'http://stage.3gmimo.com/handpet/' + 'f/z/214/19c69e51a58a92bc8cf4215cd470b66f.zip.pet'
+    #
+    # desktop.download_data(url, r'd:\download.zip')
+    #
+    # desktop.unzip_file(r'd:\download.zip',r'd:\\')
 
 if __name__ == '__main__':
     main()

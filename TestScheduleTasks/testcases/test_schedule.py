@@ -45,7 +45,7 @@ def init_device_environment(dname,dport,logfname):
     if not os.path.isdir(IMAGEPATH):
         os.makedirs(IMAGEPATH)
 
-    #initenv.init_app(DEVICENAME)
+    initenv.init_app(DEVICENAME)
 
 
 class TestScheduleTasks(unittest.TestCase):

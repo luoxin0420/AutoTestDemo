@@ -96,7 +96,7 @@ def compare_image(actu_image,expe_image):
     try:
 
         value = int(ret.stdout.readline())
-        if value < 1500:
+        if value < 150:
             return True
     except Exception,ex:
         print ex

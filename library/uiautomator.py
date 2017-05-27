@@ -7,7 +7,7 @@ import re
 import time
 import xml.etree.cElementTree as ET
 
-import library
+import device
 
 
 class Element(object):
@@ -22,9 +22,9 @@ class Element(object):
 
         # get control tree of current activity
         cmd = "adb -s {0} shell uiautomator dump /data/local/tmp/uidump.xml".format(self.uid)
-        library.shellPIPE(cmd)
+        device.Device.shellPIPE(cmd)
         cmd = "adb -s {0} pull /data/local/tmp/uidump.xml {1}".format(self.uid,self.tempFile)
-        library.shellPIPE(cmd)
+        device.Device.shellPIPE(cmd)
 
     def __element(self, attrib, name):
 
@@ -84,12 +84,12 @@ class Event(object):
     def __init__(self,uid):
         self.uid = uid
         cmd = "adb -s {0} wait-for-device ".format(self.uid)
-        library.shellPIPE(cmd)
+        device.Device.shellPIPE(cmd)
 
     def touch(self, dx, dy):
 
         cmd = "adb -s {0} shell input tap {1} {2}".format(self.uid,str(dx),str(dy))
-        library.shellPIPE(cmd)
+        device.Device.shellPIPE(cmd)
         time.sleep(0.5)
 
 

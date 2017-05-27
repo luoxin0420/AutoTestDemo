@@ -12,7 +12,7 @@ import desktop
 
 class DumpLogcatFileReader(threading.Thread):
 
-    def __init__(self, mainlog, uid, pkg, filter, pid_index=0):
+    def __init__(self, mainlog, uid, pkg, filter='', pid_index=0):
 
         threading.Thread.__init__(self)
         self._mainlog = mainlog
@@ -36,7 +36,7 @@ class DumpLogcatFileReader(threading.Thread):
 
     def run(self):
         cmd = self.get_filter_command()
-        with open(self._mainlog,'w+') as outfile:
+        with open(self._mainlog, 'w+') as outfile:
             self._process = subprocess.Popen(cmd, stdout=outfile)
 
     @staticmethod
@@ -68,10 +68,10 @@ class DumpLogcatFileReader(threading.Thread):
             basic_cmd = 'adb -s {0} shell logcat -b main -v threadtime '.format(self._uid)
             pcmd = ''.join([' | ', 'grep ', '"', pid, '"'])
 
-            filter_condition = self._filter.split(';')
-
-            for cond in filter_condition:
-                fcmd = fcmd + ''.join([' | ', 'grep ','"', cond,'"'])
+            if self._filter != '':
+                filter_condition = self._filter.split(';')
+                for cond in filter_condition:
+                    fcmd = fcmd + ''.join([' | ', 'grep ','"', cond,'"'])
 
             #cmd = ''.join([basic_cmd, pcmd, fcmd, limit_num, '| awk "{print $7}"'])
             cmd = ''.join([basic_cmd, pcmd, fcmd])
@@ -79,9 +79,12 @@ class DumpLogcatFileReader(threading.Thread):
         return cmd
 
     def stop(self):
-        self._process.terminate()
-        print 'wait for logcat stopped...'
-        time.sleep(1)
+        try:
+            self._process.terminate()
+            print 'wait for logcat stopped...'
+            time.sleep(1)
+        except Exception, ex:
+            print ex
 
 
 class ParseLogcat(object):
@@ -132,13 +135,13 @@ class ParseLogcat(object):
 
         return prev_data
 
-    def getUserID(self,fname):
+    def getUserID(self):
 
         userID = ''
         keyword =r'.*<uid>(.*)</uid>.*'
         content = re.compile(keyword)
         try:
-            with open(fname) as file:
+            with open(self._fname) as file:
                 for line in file:
                     m = content.match(line)
                     if m:
@@ -148,14 +151,17 @@ class ParseLogcat(object):
             print ex
         return userID
 
-    def keywordFilter(self,fname, keyword):
+    def keywordFilter(self,keyword):
 
         count = 0
 
         # Filter file and output to another file
-        filteredFilename = fname.split('.')[0] + '_filter.log'
+        try:
+            filteredFilename = self._fname.split('.')[0] + '_filter.log'
+        except Exception,ex:
+            print ex
 
-        with open(fname, 'r') as rfile, open(filteredFilename, 'w+') as wfile:
+        with open(self._fname, 'r') as rfile, open(filteredFilename, 'w+') as wfile:
 
             for line in rfile:
                 if line.lower().find(keyword.lower()) >= 0:

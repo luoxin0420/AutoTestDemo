@@ -215,13 +215,6 @@ class Device(object):
         except Exception,ex:
             print ex
 
-    def install_app(self,app_path):
-
-        self.app_operation('INSTALL',app_path)
-        sleep(2)
-        self.app_operation('LAUNCH')
-        sleep(2)
-
     def device_service_operation(self,action):
 
         service = self.CONFIG.getValue(self.uid,'service')

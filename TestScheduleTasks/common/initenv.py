@@ -4,7 +4,7 @@ __author__ = 'Xuxh'
 
 import os
 from time import sleep
-#from uiautomator import Device
+from uiautomator import Device
 import threading
 
 from library import uiautomator

@@ -12,7 +12,7 @@ from library import device
 
 
 # def handle_popup_windows(nub,device):
-#
+
 #     for i in range(nub):
 #         d = Device(device)
 #         el1 = d(text=u"安装")

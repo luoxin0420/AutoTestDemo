@@ -65,25 +65,30 @@ def download_data(data,logpath):
         os.makedirs(parent_path)
 
     # get url and download image file
-    jsonData = pJson.parseJson(data)
-    link = CONFIG.getValue(my_device.uid,'adv_url')
-    value1 = jsonData.extract_element_value(link)
-    if len(value1[0]) > 0:
-        host = CONFIG.getValue('Common','host')
-        url = host + value1[0][0]
-        # get file name
-        name = value1[0][0].split('/')[-1][:-4]
-        image_file = os.path.join(parent_path,name)
-        desktop.download_data(url, image_file)
+    try:
+        jsonData = pJson.parseJson(data)
+        link = CONFIG.getValue(my_device.uid,'adv_url')
+        value1 = jsonData.extract_element_value(link)
+        if len(value1[0]) > 0:
+            host = CONFIG.getValue('Common','host')
+            url = host + value1[0][0]
+            # get file name
+            name = value1[0][0].split('/')[-1][:-4]
+            image_file = os.path.join(parent_path,name)
+            desktop.download_data(url, image_file)
 
-    # get layout file
-    link = CONFIG.getValue(my_device.uid,'layout_url')
-    value2 = jsonData.extract_element_value(link)
-    if len(value2[0]) > 0:
-        url = host + value2[0][0]
-        name = value2[0][0].split('/')[-1]
-        layout = os.path.join(parent_path,name)
-        desktop.download_data(url, layout)
+        # get layout file
+        link = CONFIG.getValue(my_device.uid,'layout_url')
+        value2 = jsonData.extract_element_value(link)
+        if len(value2[0]) > 0:
+            url = host + value2[0][0]
+            name = value2[0][0].split('/')[-1]
+            layout = os.path.join(parent_path,name)
+            desktop.download_data(url, layout)
+    except Exception,ex:
+
+        print ex
+        print data
 
     return image_file,layout
 
@@ -238,7 +243,7 @@ if __name__ == '__main__':
 
     # start-up service and monitor logcat
     logpath = os.path.dirname(logname)
-    out = os.path.join(logpath,'out.log')
+    out = os.path.abspath(os.path.join(logpath,'out.log'))
 
     while TestFlag:
 

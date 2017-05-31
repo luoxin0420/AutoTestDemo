@@ -7,6 +7,7 @@ import threading
 import re
 import time
 import pJson
+from library import desktop
 
 
 class DumpLogcatFileReader(threading.Thread):
@@ -36,24 +37,28 @@ class DumpLogcatFileReader(threading.Thread):
     def run(self):
         cmd = self.get_filter_command()
         with open(self._mainlog, 'w+') as outfile:
-            self._process = subprocess.Popen(cmd, stdout=outfile)
+            self._process = subprocess.Popen(cmd, shell=True, stdout=outfile)
 
     @staticmethod
     def get_PID(uid,packagename):
 
         pid = []
         cmd = "adb -s {0} shell ps | grep {1} ".format(uid,packagename)
-        cmd = cmd + "| awk '{print $2}'"
+        sys_name = desktop.get_desktop_os_type()
+        if sys_name == 'Windows':
+            cmd = cmd + '| awk "{print $2}"'
+        else:
+            cmd = cmd + "| awk '{print $2}'"
         try:
 
             popen = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE)
             popen.wait()
             pid = popen.stdout.readlines()
 
-            if len(pid) > 0:
-                return pid
         except KeyboardInterrupt:
             return pid
+
+        return pid
 
     def get_filter_command(self):
 

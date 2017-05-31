@@ -44,7 +44,7 @@ class DumpLogcatFileReader(threading.Thread):
 
         pid = []
         cmd = "adb -s {0} shell ps | grep {1} ".format(uid,packagename)
-        cmd = cmd + '| awk "{print $2}"'
+        cmd = cmd + "| awk '{print $2}'"
         try:
 
             popen = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE)

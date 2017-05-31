@@ -3,7 +3,21 @@
 __author__ = 'Xuxh'
 
 import subprocess
+import desktop
 
+
+def get_cmd_name():
+
+    cmd_name = ''
+
+    os_name = desktop.get_desktop_os_type()
+
+    if os_name == 'Windows':
+        cmd_name = 'im_convert'
+    else:
+        cmd_name = 'convert'
+
+    return cmd_name
 
 
 def execute_cmds(cmds,debug=False):
@@ -22,8 +36,10 @@ def execute_cmds(cmds,debug=False):
 
 
 def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
+
+    cmd_name = get_cmd_name()
     cmds = [
-    'im_convert {} -crop {}x{}+{}+{} {}'.format(img_path, width, height, x, y,
+    '{} {} -crop {}x{}+{}+{} {}'.format(cmd_name, img_path, width, height, x, y,
                                         output_path)
     ]
     ret = execute_cmds(cmds)
@@ -32,8 +48,10 @@ def crop_image(img_path, width, height, x, y, output_path='crop_img.jpg'):
 
 def resize_image(img_path, width, height, output_path):
 
+    cmd_name = get_cmd_name()
+
     cmds = [
-    'im_convert {} -resize {}x{} {}'.format(img_path, width, height, output_path)
+    '{} {} -resize {}x{} {}'.format(cmd_name, img_path, width, height, output_path)
     ]
     ret = execute_cmds(cmds)
     return ret
@@ -48,8 +66,10 @@ def identify_image(img_path):
 
 def overlap_image(orig_img, overlay_img, dest_img):
 
+    cmd_name = get_cmd_name()
+
     cmds = [
-    'im_convert {} -compose over {} -composite {}'.format(orig_img, overlay_img, dest_img)
+    '{} {} -compose over {} -composite {}'.format(cmd_name, orig_img, overlay_img, dest_img)
     ]
 
     ret = execute_cmds(cmds)
@@ -58,8 +78,10 @@ def overlap_image(orig_img, overlay_img, dest_img):
 
 def add_backgound(orig_img,rgb_color,dest_img):
 
+    cmd_name = get_cmd_name()
+
     cmds = [
-    'im_convert {} -background {} -flatten {}'.format(orig_img, rgb_color, dest_img)
+    '{} {} -background {} -flatten {}'.format(cmd_name, orig_img, rgb_color, dest_img)
     ]
 
     ret = execute_cmds(cmds)
@@ -68,8 +90,10 @@ def add_backgound(orig_img,rgb_color,dest_img):
 
 def make_image_gray(img_path, gray_img):
 
+    cmd_name = get_cmd_name()
+
     cmds = [
-        'im_convert {} -type Grayscale -depth 4 {}'.format(img_path, gray_img),
+        '{} {} -type Grayscale -depth 4 {}'.format(img_path, gray_img),
     ]
     ret = execute_cmds(cmds)
     return ret
@@ -78,8 +102,10 @@ def make_image_gray(img_path, gray_img):
 # just for separate transparent image, remove alpha
 def separate_image(orig_img,dest_img):
 
+    cmd_name = get_cmd_name()
+
     cmds = [
-        'im_convert {}  -background black -alpha remove {}'.format(orig_img, dest_img),
+        '{} {}  -background black -alpha remove {}'.format(orig_img, dest_img),
     ]
     ret = execute_cmds(cmds)
     return ret

@@ -259,10 +259,11 @@ if __name__ == '__main__':
             # get actual screenshots
             actu_image = get_screenshots_name(logname,loop_number)
             my_device.app_operation('LAUNCH')
-            sleep(2)
+            sleep(4)
             my_device.get_device_screenshot(actu_image)
             temp = '<img src=\"' + actu_image + '\" width=120 height=200 />'
             my_logger.write('TEST_DEBUG','Actual Screen:'+ temp)
+            my_device.app_operation('CLOSE')
             result = verify_image(expc_image,actu_image,layout)
 
             if result:

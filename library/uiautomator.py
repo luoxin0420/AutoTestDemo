@@ -30,7 +30,7 @@ class Element(object):
 
         # return single element
         self.__uidump()
-        tree = ET.ElementTree(file=self.tempFile + "\\uidump.xml")
+        tree = ET.ElementTree(file=self.tempFile + "/uidump.xml")
         treeIter = tree.iter(tag="node")
         for elem in treeIter:
             if elem.attrib[attrib] == name:
@@ -46,7 +46,7 @@ class Element(object):
         # return list with multiple same arribute
         list = []
         self.__uidump()
-        tree = ET.ElementTree(file=self.tempFile + "\\uidump.xml")
+        tree = ET.ElementTree(file=self.tempFile + "/uidump.xml")
         treeIter = tree.iter(tag="node")
         for elem in treeIter:
             if elem.attrib[attrib] == name:

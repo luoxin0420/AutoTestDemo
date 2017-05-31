@@ -7,7 +7,6 @@ import threading
 import re
 import time
 import pJson
-import desktop
 
 
 class DumpLogcatFileReader(threading.Thread):

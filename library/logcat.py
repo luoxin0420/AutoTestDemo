@@ -63,8 +63,9 @@ class DumpLogcatFileReader(threading.Thread):
     def get_filter_command(self):
 
         pid = self.__get_unique_PID()
-        for char in ['\r','\n']:
-            pid = pid.replace(char,'')
+        if len(pid) > 0:
+            for char in ['\r','\n']:
+                pid = pid.replace(char,'')
         cmd = ''
         fcmd = ''
         if pid != '':
@@ -120,8 +121,8 @@ class ParseLogcat(object):
                         match = content.match(str_text)
                         if match:
                             value = match.group(1)
-                        json_data = json_data + str_text.split(value)[1]
-                        prev_data = json_data
+                            json_data = json_data + str_text.split(value)[1]
+                            prev_data = json_data
                     else:
                         Flag = False
 

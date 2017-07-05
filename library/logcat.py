@@ -20,6 +20,7 @@ class DumpLogcatFileReader(threading.Thread):
         self._pkg = pkg
         self._pindex = pid_index
         self._filter = filter
+        self.outfile = None
 
     def clear_logcat(self):
 
@@ -28,16 +29,29 @@ class DumpLogcatFileReader(threading.Thread):
 
     def __get_unique_PID(self):
 
-        pid = self.get_PID(self._uid,self._pkg)
-        if len(pid) > 0 and int(self._pindex) < len(pid):
-            return pid[self._pindex]
+        try:
+            pid = self.get_PID(self._uid,self._pkg)
+            if len(pid) > 0 and int(self._pindex) < len(pid):
+                return pid[self._pindex]
+        except Exception,ex:
+            print ex
+
+        return 0
+
+    def __get_basic_filter_command(self):
+
+        if self._pkg.find('system') != -1:
+
+            cmd = 'logcat -b main -b system -v threadtime'
         else:
-            return 0
+            cmd = 'logcat -b main -v threadtime'
+
+        return cmd
 
     def run(self):
         cmd = self.get_filter_command()
-        with open(self._mainlog, 'w+') as outfile:
-            self._process = subprocess.Popen(cmd, shell=True, stdout=outfile)
+        with open(self._mainlog, 'w') as self.outfile:
+            self._process = subprocess.Popen(cmd, shell=True, stdout=self.outfile)
 
     @staticmethod
     def get_PID(uid,packagename):
@@ -54,7 +68,6 @@ class DumpLogcatFileReader(threading.Thread):
             popen = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE)
             popen.wait()
             pid = popen.stdout.readlines()
-
         except KeyboardInterrupt:
             return pid
 
@@ -62,32 +75,36 @@ class DumpLogcatFileReader(threading.Thread):
 
     def get_filter_command(self):
 
-        pid = self.__get_unique_PID()
-        if len(pid) > 0:
-            for char in ['\r','\n']:
-                pid = pid.replace(char,'')
-        cmd = ''
         fcmd = ''
-        if pid != '':
+        pcmd = ''
+        basic_cmd = self.__get_basic_filter_command()
+        basic_cmd = 'adb -s {0} '.format(self._uid) + basic_cmd
+        try:
+            if self._pkg.find('system') == -1:
+                pid = self.__get_unique_PID()
+                if len(pid) > 0:
+                    value = pid.strip()
+                    pcmd = ''.join([' | ', 'grep ', '"', value, '"'])
+        except Exception,ex:
+            print ex
 
-            basic_cmd = 'adb -s {0} shell logcat -b main -v threadtime '.format(self._uid)
-            pcmd = ''.join([' | ', 'grep ', '"', pid, '"'])
+        if self._filter != '':
+            filter_condition = self._filter.split(';')
+            for cond in filter_condition:
+                fcmd = fcmd + ''.join([' | ', 'grep -E ','"', cond,'"'])
 
-            if self._filter != '':
-                filter_condition = self._filter.split(';')
-                for cond in filter_condition:
-                    fcmd = fcmd + ''.join([' | ', 'grep ','"', cond,'"'])
 
-            #cmd = ''.join([basic_cmd, pcmd, fcmd, limit_num, '| awk "{print $7}"'])
-            cmd = ''.join([basic_cmd, pcmd, fcmd])
-
+        #cmd = ''.join([basic_cmd, pcmd, fcmd, limit_num, '| awk "{print $7}"'])
+        cmd = ''.join([basic_cmd, pcmd, fcmd])
+        #print cmd
         return cmd
 
     def stop(self):
         try:
-            self._process.terminate()
             print 'wait for logcat stopped...'
-            time.sleep(1)
+            self._process.kill()
+            time.sleep(3)
+            self.outfile.close()
         except Exception, ex:
             print ex
 

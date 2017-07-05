@@ -96,12 +96,12 @@ class Event(object):
 def click_popup_window(uid,findstr):
 
     element = Element(uid)
-    evevt = Event(uid)
+    event = Event(uid)
 
     for fs in findstr:
         e1 = element.findElementByName(fs)
-        if not e1 is None:
-            evevt.touch(e1[0], e1[1])
+        if e1 is not None:
+            event.touch(e1[0], e1[1])
             time.sleep(1)
 
 if __name__ == '__main__':

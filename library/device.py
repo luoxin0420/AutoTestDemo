@@ -97,22 +97,26 @@ class Device(object):
         except Exception,ex:
             print ex
 
-    def app_operation(self,action,path=''):
+    def app_operation(self,action,path='',service=''):
 
+        if service != '':
+            pkg = service
+            pname = service
+        else:
+            pkg = self.pkg
+            pname = ''.join([pkg, '/', self.activity])
 
-        pname = ''.join([self.pkg, '/', self.activity])
-
-        if self.pkg != "":
+        if pkg != '':
             if action.upper() == "LAUNCH":
                 cmd = "".join(["adb -s ", self.uid, " shell am start -n ", pname])
             if action.upper() == "CLOSE":
-                cmd = "".join(["adb -s ", self.uid, " shell am force-stop ", self.pkg])
+                cmd = "".join(["adb -s ", self.uid, " shell am force-stop ", pkg])
             if action.upper() == "INSTALL":
                 cmd = "".join(["adb -s ", self.uid, " shell pm install -f ", path])
             if action.upper() == "CLEAR":
-                cmd = "".join(["adb -s ", self.uid, " shell pm clear ", self.pkg])
+                cmd = "".join(["adb -s ", self.uid, " shell pm clear ", pkg])
             if action.upper() == "UNINSTALL":
-                cmd = "".join(["adb -s ", self.uid, " shell pm uninstall ", self.pkg])
+                cmd = "".join(["adb -s ", self.uid, " shell pm uninstall ", pkg])
 
             try:
                 p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -159,7 +163,7 @@ class Device(object):
 
     def screen_on_off(self, screen_action):
         sysstr = platform.system()
-        if sysstr == "Windows ":
+        if sysstr == "Windows":
             cmd = "".join(["adb -s ", self.uid, " shell dumpsys power | findstr  ","Display"])
         elif sysstr == "Linux":
             cmd = "".join(["adb -s ", self.uid, " shell dumpsys power | grep  ","Display"])
@@ -177,11 +181,11 @@ class Device(object):
                     cmd = "".join(["adb -s ", self.uid, " shell input keyevent 26"])
                     out = self.shellPIPE(cmd)
 
-    def update_android_time(self,delta):
+    def update_android_time(self,delta,interval_unit='hour'):
 
         # delta is interval time, like 1, -1
-        interval_num = int(self.CONFIG.getValue(self.uid, 'frequence_num')) + int(delta)
-        interval_unit = self.CONFIG.getValue(self.uid, 'frequence_unit')
+        interval_num = int(delta)
+        #interval_unit = self.CONFIG.getValue(self.uid, 'frequence_unit')
 
         # get android time, then get expected time stamp
         cmd = "".join(["adb -s ", self.uid, " shell date +%Y%m%d.%H%M%S "])
@@ -191,6 +195,8 @@ class Device(object):
         cur_time = datetime.datetime.strptime(out,'%Y%m%d.%H%M%S')
         if interval_unit.lower() == 'hour':
             expe_time = cur_time + datetime.timedelta(hours=interval_num)
+        elif interval_unit.lower() == 'minutes':
+            expe_time = cur_time + datetime.timedelta(minutes=interval_num)
         else:
             expe_time = cur_time + datetime.timedelta(days=interval_num)
         #time_stamp = time.mktime(expe_time.timetuple())
@@ -231,6 +237,86 @@ class Device(object):
         cmd = "".join(["adb -s ",self.uid," shell /system/bin/screencap -p /sdcard/screenshot.png "])
         self.shellPIPE(cmd)
         cmd = "".join(["adb -s ",self.uid," pull /sdcard/screenshot.png ", fname])
+        self.shellPIPE(cmd)
+
+    def device_reboot(self):
+
+        cmd = ''.join(["adb -s ",self.uid," reboot"])
+        self.shellPIPE(cmd)
+
+    def install_app_from_desktop(self,action,path=''):
+
+        if path != '' and os.path.isfile(path):
+            if action.upper() == "INSTALL":
+                cmd = "".join(["adb -s ", self.uid, " install ", path])
+            if action.upper() == "COVER_INSTALL":
+                cmd = "".join(["adb -s ", self.uid, " install -r ", path])
+            try:
+                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                p.wait()
+            except Exception,ex:
+                print ex
+
+    def get_device_mac_address(self):
+
+        try:
+            cmd = "".join(["adb -s ", self.uid, " shell cat /sys/class/net/wlan0/address "])
+            out = self.shellPIPE(cmd)
+        except Exception,ex:
+            return ''
+
+        return out
+
+    def sdcard_operation(self,action,path):
+
+        #https://raspberrypi.stackexchange.com/questions/3800/find-the-right-device-name-of-an-sd-card-connected-via-a-usb-card-reader
+        #https://stackoverflow.com/questions/22549489/mount-an-sd-card-manually-from-adb-shell-in-android
+        if action.upper() == "MOUNT":
+            cmd = "".join(["adb -s ", self.uid, " shell su mount -o bind  ", path])
+        if action.upper() == "UMONNT":
+            cmd = "".join(["adb -s ", self.uid, " shell su umount", path])
+        self.shellPIPE(cmd)
+
+    def get_IMEI(self):
+
+        # IMEI由15位数字组成，其组成为：　　1、前6位数（TAC，Type Approval Code)是"型号核准号码"，一般代表机型
+        # 2、接着的2位数（FAC，Final Assembly Code)是"最后装配号"，一般代表产地
+        # 3、之后的6位数（SNR)是"串号"，一般代表生产顺序号
+        # 4、最后1位数（SP)通常是"0"，为检验码，目前暂备用。
+        # adb shell dumpsys iphonesubinfo (仅适用<4.4以下版本）
+        #       Result: Parcel(
+        # 0x00000000: 00000000 0000000f 00350033 00340035 '........3.5.5.4.'
+        # 0x00000010: 00350035 00360030 00330031 00380033 '5.5.0.6.1.3.3.8.'
+        # 0x00000020: 00340033 00000036                   '3.4.6...        ')
+        try:
+            cmd = "".join(["adb -s ", self.uid, " shell service call iphonesubinfo 1"])
+            out = self.shellPIPE(cmd)
+            temp = out.split("'")
+            imei = ''.join([temp[1],temp[3],temp[5]]).replace('.','').strip()
+        except Exception,ex:
+            return ''
+        return imei
+
+    # 0 -->  "KEYCODE_UNKNOWN" 1 -->  "KEYCODE_MENU" 2 -->  "KEYCODE_SOFT_RIGHT" 3 -->  "KEYCODE_HOME"
+    # 4 -->  "KEYCODE_BACK"    5 -->  "KEYCODE_CALL" 6 -->  "KEYCODE_ENDCALL"
+    # 7-16 -->  "KEYCODE_0" -->  "KEYCODE_9"
+    # 29-54 -->  "KEYCODE_A" -->  "KEYCODE_Z"
+    # 24 -->  "KEYCODE_VOLUME_UP"
+    # 25 -->  "KEYCODE_VOLUME_DOWN"
+    # 26 -->  "KEYCODE_POWER"
+    # 27 -->  "KEYCODE_CAMERA"
+    # 28 -->  "KEYCODE_CLEAR"
+    # 187 --> KEYCODE_APP_SWITCH
+    def send_keyevent(self,value):
+
+        cmd = "".join(["adb -s ", self.uid, " shell input keyevent ", str(value)])
+        self.shellPIPE(cmd)
+
+    def restart_adb_server(self):
+
+        cmd = "".join(["adb ", " kill-server "])
+        self.shellPIPE(cmd)
+        cmd = "".join(["adb ", " start-server "])
         self.shellPIPE(cmd)
 
 

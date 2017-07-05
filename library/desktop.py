@@ -13,6 +13,7 @@ import subprocess
 import smtplib
 import psutil
 import signal
+import ctypes
 from email import Encoders
 from email.MIMEText import MIMEText
 from email.MIMEMultipart import MIMEMultipart
@@ -84,14 +85,15 @@ def create_logger(filename):
 def get_log_name(device_name,basename):
 
     cur_date = datetime.datetime.now().strftime("%Y%m%d")
-    now = datetime.datetime.now().strftime("%Y%m%d%H%M")
-    parent_path = os.path.join('log',cur_date,device_name,now)
+    now = datetime.datetime.now().strftime("%H%M")
+    name = CONFIG.getValue(device_name,'name')
+    parent_path = os.path.join('log',cur_date, device_name+'_'+name, now+basename)
 
     # create multi layer directory
     if not os.path.isdir(parent_path):
         os.makedirs(parent_path)
 
-    filename = os.path.join(parent_path,basename)
+    filename = os.path.join(parent_path,'result.log')
 
     return filename
 
@@ -153,6 +155,55 @@ def unzip_file(fname,despath):
             os.makedirs(f)
         else:
             zfile.extract(f,despath)
+
+class Logger:
+
+    FOREGROUND_WHITE = 0x0007
+    FOREGROUND_BLUE = 0x01 # text color contains blue.
+    FOREGROUND_GREEN= 0x02 # text color contains green.
+    FOREGROUND_RED  = 0x04 # text color contains red.
+    FOREGROUND_YELLOW = FOREGROUND_RED | FOREGROUND_GREEN
+
+    STD_OUTPUT_HANDLE= -11
+    std_out_handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+
+    def __init__(self, path,clevel = logging.DEBUG,Flevel = logging.DEBUG):
+        self.logger = logging.getLogger("VlifeTest")
+        self.logger.setLevel(logging.DEBUG)
+        fmt = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+        sh = logging.StreamHandler()
+        sh.setFormatter(fmt)
+        sh.setLevel(clevel)
+        #设置文件日志
+        fh = logging.FileHandler(path)
+        fh.setFormatter(fmt)
+        fh.setLevel(Flevel)
+        self.logger.addHandler(sh)
+        self.logger.addHandler(fh)
+
+    def set_color(self,color, handle=std_out_handle):
+        bool = ctypes.windll.kernel32.SetConsoleTextAttribute(handle, color)
+        return bool
+
+    def debug(self,message):
+        self.logger.debug(message)
+
+    def info(self,message):
+        self.logger.info(message)
+
+    def war(self,message):
+        self.set_color(self.FOREGROUND_YELLOW)
+        self.logger.warn(message)
+        self.set_color(self.FOREGROUND_WHITE)
+
+    def error(self,message):
+        self.set_color(self.FOREGROUND_RED)
+        self.logger.error(message)
+        self.set_color(self.FOREGROUND_WHITE)
+
+    def cri(self,message):
+        self.logger.critical(message)
+
 
 if __name__ == '__main__':
 

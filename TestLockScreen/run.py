@@ -11,6 +11,7 @@ from library import device
 from library import configuration
 from library import myglobal
 from testcases import test_startup_register
+from testcases import test_tasks
 
 if __name__ == '__main__':
 
@@ -42,6 +43,9 @@ if __name__ == '__main__':
         for cases in case_list:
             if cases.startswith('test_startup_register'):
                 test_startup_register.run(uid)
+            if cases.startswith('test_tasks'):
+                test_tasks.run(uid)
+
 
     except Exception, ex:
         print ex

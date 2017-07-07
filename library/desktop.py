@@ -115,14 +115,15 @@ def launch_appium(uid, port, bport):
     return status, ap
 
 
-def close_all_nodes():
+# Note: program without extension
+def close_all_program(program):
 
     temp = ""
 
     if platform.system() == "Windows":
-        temp = "taskkill /F /IM node.exe"
+        temp = ''.join(["taskkill /F /IM ",program,'.exe'])
     if platform.system() == "Linux":
-        temp = "killall node"
+        temp = ''.join(["killall ",program])
     subprocess.Popen(temp, shell=True)
     time.sleep(1)
 

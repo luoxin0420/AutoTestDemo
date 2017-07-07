@@ -20,8 +20,10 @@ from library import device
 from library import desktop
 from library import pXml
 from library import uiautomator
+from library import desktop
 from library import newTestSuite
 from library import HTMLTestRunner
+import threading
 
 
 PATH = lambda p: os.path.abspath(
@@ -33,8 +35,10 @@ PATH = lambda p: os.path.abspath(
 # 手机上需要有SDCARD
 # 需要准备相应的安装包及第三包安装包，并在配置文件中指定源路径及目标路径
 # 手机的语言设置请设成中文
-# 需要设置手机锁屏
+# 需要设置手机锁屏,解锁方式最好是上滑屏与向右滑屏
 # 确保第三方应用并没有在待测手机上安装
+# 保证手机在第一次运行是解锁状态，使用的主题是系统主题
+# 日期设置成自动，自动锁屏设置到30分钟
 
 
 class TestStartupRegister(unittest.TestCase):
@@ -45,6 +49,9 @@ class TestStartupRegister(unittest.TestCase):
         self.master_service = CONFIG.getValue(DEVICENAME,'master_service')
         self.slave_service = CONFIG.getValue(DEVICENAME,'slave_service')
         self.slave_main_process = self.slave_service + ':main'
+        self.omit_cases = CONFIG.getValue(DEVICENAME, 'omit_cases')
+        self.set_theme = bool(CONFIG.getValue(DEVICENAME, 'set_theme'))
+        self.set_theme_pkg = CONFIG.getValue(DEVICENAME, 'set_theme_pkg')
 
     def setUp(self):
 
@@ -57,7 +64,13 @@ class TestStartupRegister(unittest.TestCase):
         self.log_count = 1
         self.double_process = False
         self.pid_uid = {}
-        logger.info(self._testMethodName +':Start')
+
+        for title in self.omit_cases.split(':'):
+
+            if self._testMethodName.find(title) != -1:
+                self.skipTest('this case is not supported by this version')
+
+        logger.info(self._testMethodName + ':Start')
 
     def tearDown(self):
 
@@ -82,6 +95,13 @@ class TestStartupRegister(unittest.TestCase):
         except Exception,ex:
                 print ex
 
+        # make mobile theme to system theme
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'system')
+        # close all adb to avoid 5037 port occupation
+        desktop.close_all_program('adb')
+        # restart adb server
+        sleep(1)
         DEVICE.restart_adb_server()
         sleep(10)
 
@@ -110,7 +130,7 @@ class TestStartupRegister(unittest.TestCase):
         try:
             for name in (self.slave_main_process,self.master_service):
                 pid = dumplog.DumpLogcatFileReader.get_PID(DEVICENAME,name)
-                if len(pid) > 0:
+                if str(pid) > 0:
                     pid[0] = pid[0].strip()
                     pid_list.append(pid[0])
         except Exception,ex:
@@ -124,7 +144,7 @@ class TestStartupRegister(unittest.TestCase):
         pid1 = ''
         uid1 = ''
         result = False
-        print log
+        #print log
         for ln in log:
             if pid1 == '' or uid1 == '':
                 pid1, uid1 = ln.split(':')
@@ -332,9 +352,12 @@ class TestStartupRegister(unittest.TestCase):
 
     def unlock_screen(self):
 
+        DEVICE.screen_on_off("OFF")
+        sleep(2)
         DEVICE.screen_on_off("ON")
         sleep(2)
         DEVICE.emulate_swipe_action()
+        sleep(1)
 
     def reboot_device(self):
 
@@ -363,14 +386,6 @@ class TestStartupRegister(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(5)
 
-    def install_thirdapp(self,action):
-
-        self.dump_log_start(self.master_service,'')
-        app_path = PATH(PATH('../ext/' + 'advhelp.apk'))
-        DEVICE.install_app_from_desktop(action,app_path)
-        sleep(25)
-        self.result = self.filter_log_result()
-
     def close_app(self):
 
         DEVICE.app_operation('CLOSE', service=self.slave_service)
@@ -393,7 +408,7 @@ class TestStartupRegister(unittest.TestCase):
 
     #测试自激活
     #重启手机,第一次启动
-    def test_100_first_startup(self):
+    def test_activation_100_first_startup(self):
 
         #clear app
         self.clear_app()
@@ -401,7 +416,7 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(True,self.result)
 
     #重启手机,非第一次启动
-    def test_101_startup(self):
+    def test_activation_101_startup(self):
 
         #close app
         self.close_app()
@@ -410,21 +425,28 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(True,self.result)
 
     #切换WIFI,非首次启动
-    def test_103_wifi_change(self):
+    def test_activation_103_wifi_change(self):
 
         self.close_app()
         self.change_wifi()
         self.assertEqual(True,self.result)
 
     #切换WIFI，首次启动
-    def test_104_first_wifi_change(self):
+    def test_activation_104_first_wifi_change(self):
 
         self.clear_app()
         self.change_wifi()
         self.assertEqual(True,self.result)
 
-    #第一次安装第三方APP
-    def test_105_first_install_thirdapp(self):
+    def install_thirdapp(self,action):
+
+        self.dump_log_start(self.master_service,'')
+        app_path = PATH(PATH('../ext/' + 'advhelp.apk'))
+        DEVICE.install_app_from_desktop(action,app_path)
+        sleep(25)
+        self.result = self.filter_log_result()
+
+    def install_app(self):
 
         self.close_app()
         # install the third party of app
@@ -432,10 +454,8 @@ class TestStartupRegister(unittest.TestCase):
         sleep(2)
         DEVICE.app_operation('UNINSTALL',service='com.vlife.qateam.advhelp')
         sleep(2)
-        self.assertEqual(True,self.result)
 
-    #非第一次安装第三方APP
-    def test_106_cover_install_thirdapp(self):
+    def cover_install_app(self):
 
         self.close_app()
         logger.debug('Install the third of party application')
@@ -448,10 +468,42 @@ class TestStartupRegister(unittest.TestCase):
         self.install_thirdapp('COVER_INSTALL')
         DEVICE.app_operation('UNINSTALL',service='com.vlife.qateam.advhelp')
         sleep(2)
+
+    def install_app_with_pop_window(self,install_type):
+
+        find_text = [u"安装", u"允许"]
+        try:
+            threads = []
+            if install_type.upper() == 'FIRST_INSTALL':
+                install = threading.Thread(target=self.install_app)
+            else:
+                install = threading.Thread(target=self.cover_install_app)
+            proc_process = threading.Thread(target=DEVICE.do_popup_windows, args=(5, find_text))
+            threads.append(proc_process)
+            threads.append(install)
+            for t in threads:
+                t.setDaemon(True)
+                t.start()
+                sleep(3)
+            t.join()
+        except Exception,ex:
+             print ex
+
+    #第一次安装第三方APP
+    def test_activation_105_first_install_thirdapp(self):
+
+        self.install_app_with_pop_window('first_install')
+        self.assertEqual(True,self.result)
+
+
+    #非第一次安装第三方APP
+    def test_activation_106_cover_install_thirdapp(self):
+
+        self.install_app_with_pop_window('cover_install')
         self.assertEqual(True,self.result)
 
     #更新手机时间，满足三小时时间间隔
-    def test_107_update_time_active(self):
+    def test_activation_107_update_time_active(self):
 
         self.close_app()
         self.unlock_screen()
@@ -467,21 +519,21 @@ class TestStartupRegister(unittest.TestCase):
         self.result = self.filter_log_result()
         self.assertEqual(True,self.result)
 
-    #拔SD卡
-    # def test_108_umount_sdcard(self):
+    # #拔SD卡
+    # def test_activation_108_umount_sdcard(self):
     #
     #     self.sdcard_action("UMOUNT")
     #     self.assertEqual(True,self.result)
-
+    #
     # #插SD卡
-    # def test_109_mount_sdcard(self):
+    # def test_activation_109_mount_sdcard(self):
     #
     #     self.sdcard_action("MOUNT")
     #     self.assertEqual(True,self.result)
 
 
     #资源管理器杀掉主进程，满足三小时时间间隔
-    def test_110_update_time_killbythird(self):
+    def test_activation_110_update_time_killbythird(self):
 
         # unlock screen
         self.unlock_screen()
@@ -521,6 +573,35 @@ class TestStartupRegister(unittest.TestCase):
         # self.result = self.filter_log_result()
         # self.assertEqual(True,self.result)
 
+    def set_device_theme(self, activity_name, theme_type):
+
+        # log in theme app like i theme
+        DEVICE.app_operation(action='LAUNCH',service=activity_name)
+        sleep(2)
+        if theme_type.upper()== 'VLIFE':
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'vlife_theme_path').split(',')
+        else:
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'system_theme_path').split(',')
+        element = uiautomator.Element(DEVICENAME)
+        event = uiautomator.Event(DEVICENAME)
+
+        for text in vlife_theme_path:
+            x = 0
+            y = 0
+            if text.find(':') == -1:
+                value = unicode(text)
+            # 因为一些点击文字没有响应，需要点击周边的元素
+            else:
+                value = unicode(text.split(':')[0])
+                x = text.split(':')[1]
+                y = text.split(':')[2]
+            ele = element.findElementByName(value)
+            if ele is not None:
+                event.touch(ele[0]-int(x), ele[1]-int(y))
+                sleep(2)
+        # return to HOME
+        DEVICE.send_keyevent(3)
+
     def first_register(self):
 
         self.clear_app()
@@ -528,11 +609,17 @@ class TestStartupRegister(unittest.TestCase):
         # need to wait main process startup
         sleep(25)
         self.unlock_screen()
+        sleep(5)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         # monitor logcat
         self.monitor_logcat(60,'register','key:uid')
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'system')
         self.assertEqual(True,self.result)
         uid = self.reg_uid
         self.reg_uid = ''
+
         return uid
 
     def monitor_logcat(self,sleep_time,act,ftr):
@@ -548,7 +635,7 @@ class TestStartupRegister(unittest.TestCase):
 
     # 测试注册过程
     # 第一次注册，然后清缓存，再次注册，生成不同的uid
-    def test_200_diff_uid_clearCache(self):
+    def test_register_200_diff_uid_clearCache(self):
 
         #DEVICE.app_operation('LAUNCH',service=self.slave_service)
         # first register and get uid
@@ -558,19 +645,22 @@ class TestStartupRegister(unittest.TestCase):
         self.assertNotEqual(first_uid,second_uid)
 
     # 第一次注册，然后重启，再次注册，生成相同的uid
-    def test_201_same_uid_reboot(self):
+    def test_register_201_same_uid_reboot(self):
 
         first_uid = self.first_register()
         # reboot device
         DEVICE.device_reboot()
-        sleep(25)
+        sleep(20)
         self.unlock_screen()
+        sleep(5)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
         second_uid = self.reg_uid
         self.assertEqual(first_uid,second_uid)
 
     # 第一次注册，然后杀掉进程重启，再次注册，生成相同的uid
-    def test_202_same_uid_killprocessReboot(self):
+    def test_register_202_same_uid_killprocessReboot(self):
 
         first_uid = self.first_register()
         # kill process and reboot device
@@ -578,15 +668,20 @@ class TestStartupRegister(unittest.TestCase):
         DEVICE.device_reboot()
         sleep(25)
         self.unlock_screen()
+        sleep(5)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
         second_uid = self.reg_uid
         self.assertEqual(first_uid,second_uid)
 
     #第一次注册，更新时间到六小时后，然后更新WIFI状态，生成相同的uid
-    def test_203_same_uid_updateTimeWifi(self):
+    def test_register_203_same_uid_updateTimeWifi(self):
 
         first_uid = self.first_register()
         self.log_reader = None
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         # update time
         DEVICE.update_android_time(6)
         # close wifi, then open
@@ -600,37 +695,55 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(first_uid,second_uid)
 
     #第一次注册GPRS
-    def test_204_register_byGPRS(self):
+    def test_register_204_register_byGPRS(self):
 
         # close wifi
         DEVICE.wifi_operation('OFF')
-        # identify if current conntion is GPRS
-        self.monitor_logcat(60,'register','key:uid')
-        self.assertNotEqual(self.reg_uid,'')
+        sleep(5)
+        DEVICE.gprs_operation('ON')
+        sleep(5)
+        self.first_register()
+        sleep(5)
+        DEVICE.wifi_operation('ON')
+        sleep(5)
+        self.assertEqual(True,self.result)
 
     # 第一次注册失败在断网情况下，重新联网注册成功
-    def test_205_Reregister_RecoveryConnect(self):
+    def test_register_205_Reregister_RecoveryConnect(self):
 
         logger.debug('WIFI connection disconnected, then reboot device')
         DEVICE.wifi_operation('OFF')
+        sleep(5)
+        DEVICE.gprs_operation('OFF')
         sleep(3)
         self.close_app()
         DEVICE.device_reboot()
         sleep(20)
         self.unlock_screen()
+        sleep(8)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
         # verify uid is not found
         self.assertEqual(False,self.result)
         self.log_reader = None
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'system')
 
         # reconnect network
         logger.debug('WIFI connected, then reboot device')
+        DEVICE.gprs_operation('ON')
+        sleep(5)
         DEVICE.wifi_operation('ON')
-        sleep(10)
+        sleep(5)
         DEVICE.device_reboot()
         sleep(20)
         self.unlock_screen()
+        sleep(8)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
+
         # verify uid is found
         self.assertEqual(True,self.result)
 
@@ -656,7 +769,7 @@ class TestStartupRegister(unittest.TestCase):
                     result = False
         return result
 
-    def test_206_doubleproc_diff_uid_clearCache(self):
+    def test_register_doubleproc_206_diff_uid_clearCache(self):
 
         result = True
         # first register and get uid
@@ -682,7 +795,7 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(True,result)
 
     # 第一次注册，然后重启，再次注册，生成相同的uid
-    def test_207_doubleproc_same_uid_reboot(self):
+    def test_register_doubleproc_207_same_uid_reboot(self):
 
         # first register and get uid
         prev_pid_uid = self.double_process_first_register()
@@ -692,6 +805,9 @@ class TestStartupRegister(unittest.TestCase):
         DEVICE.device_reboot()
         sleep(25)
         self.unlock_screen()
+        sleep(5)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
 
         # Verify if get two uid
@@ -701,7 +817,7 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(True,result)
 
     #第一次注册，然后杀掉进程重启，再次注册，生成相同的uid
-    def test_208_doubleproc_uid_killprocReboot(self):
+    def test_register_doubleproc_208_uid_killprocReboot(self):
 
         # first register and get uid
         prev_pid_uid = self.double_process_first_register()
@@ -712,6 +828,8 @@ class TestStartupRegister(unittest.TestCase):
         DEVICE.device_reboot()
         sleep(25)
         self.unlock_screen()
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'register','key:uid')
 
         # Verify if get two uid
@@ -721,13 +839,15 @@ class TestStartupRegister(unittest.TestCase):
         self.assertEqual(True,result)
 
     # 第一次注册，更新时间到六小时后，然后更新WIFI状态，生成相同的uid
-    def test_209_doubleproc_same_uid_updateTimeWifi(self):
+    def test_register_doubleproc_209_same_uid_updateTimeWifi(self):
 
         # first register and get uid
         prev_pid_uid = self.double_process_first_register()
 
         # update time
         logger.debug('Update time and switch WIFI, expected uid is same')
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         DEVICE.update_android_time(6)
         # close wifi, then open
         sleep(5)
@@ -787,31 +907,45 @@ class TestStartupRegister(unittest.TestCase):
         self.result = self.filter_log_result('login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(True,self.result)
         self.log_reader = None
-        # # 进程重启后触发定期联网,更新时间到到五分钟后，会发送登录包
-        DEVICE.update_android_time(5,interval_unit='minutes')
+        # wait for 5 minutes, make server session overdue
+        sleep(5*60)
+        # # 进程重启后触发定期联网,更新时间到到六小时后，会发送登录包
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
+        DEVICE.update_android_time(6)
         sleep(5)
         # close wifi, then open
         DEVICE.wifi_operation('OFF')
-        sleep(10)
+        sleep(5)
         DEVICE.wifi_operation('ON')
-        sleep(10)
+        sleep(5)
         self.monitor_logcat(60,'login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(True,self.result)
 
     def test_303_relogin_in_1min(self):
 
-        self.first_register()
+        self.clear_app()
+        DEVICE.device_reboot()
+        # need to wait main process startup
+        sleep(25)
+        self.unlock_screen()
+        sleep(5)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
+        # monitor logcat
+        self.monitor_logcat(60,'register','key:uid')
         self.result = self.filter_log_result('login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(True,self.result)
         self.log_reader = None
-        # # 进程重启后触发定期联网,更新时间到到一分钟后,不会发登录包
-        DEVICE.update_android_time(1,interval_unit='minutes')
-        # close wifi, then open
-        sleep(5)
-        DEVICE.wifi_operation('OFF')
-        sleep(10)
-        DEVICE.wifi_operation('ON')
-        sleep(10)
+
+        # 进程重启后触发定期联网,在一分钟内不会发登录包
+        DEVICE.update_android_time(6)
+        sleep(2)
+        # lighten screen
+        DEVICE.screen_on_off('OFF')
+        sleep(1)
+        DEVICE.screen_on_off('ON')
+        sleep(1)
         self.monitor_logcat(60,'login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(False,self.result)
 
@@ -823,72 +957,41 @@ class TestStartupRegister(unittest.TestCase):
         prev_uid = self.filter_result.pop('uid')
         self.filter_result = {}
         self.log_reader = None
-        # # 进程重启后触发定期联网,更新时间到到一分钟后,发登录包
-        DEVICE.update_android_time(1,interval_unit='minutes')
-        sleep(5)
+        # # 进程重启后触发定期联网,发登录包
         DEVICE.device_reboot()
         sleep(25)
         self.unlock_screen()
+        sleep(8)
+        if self.set_theme:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
         self.monitor_logcat(60,'login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(True,self.result)
         curr_uid = self.filter_result.pop('uid')
         self.assertEqual(prev_uid,curr_uid)
 
-    def test_306_doubleproc_check_pkg(self):
+    def test_login_doubleproc_306_check_pkg(self):
 
         self.double_process_first_register()
         self.result = self.filter_log_result('login','jabber:iq:auth;jabber:iq:userinfo')
         self.assertEqual(True,self.result)
 
 
-def start_lockscreen_bypath():
-
-    vlife_lockscreen_path = CONFIG.getValue(DEVICENAME,'vlife_lockscreen_path').split(',')
-    element = uiautomator.Element(DEVICENAME)
-    event = uiautomator.Event(DEVICENAME)
-    x = 0
-    y = 0
-    for text in vlife_lockscreen_path:
-        if text.find(':') == -1:
-            value = unicode(text)
-        # 因为一些点击文字没有响应，需要点击周边的元素
-        else:
-            value = unicode(text.split(':')[0])
-            x = text.split(':')[1]
-            y = text.split(':')[2]
-        ele = element.findElementByName(value)
-        if ele is not None:
-            event.touch(ele[0]-int(x), ele[1]-int(y))
-            sleep(2)
-
-
-def start_vlife_lockscreen(activity_name):
-
-    DEVICE.app_operation(action='LAUNCH',service=activity_name)
-    sleep(2)
-    start_lockscreen_bypath()
-    DEVICE.send_keyevent(3)
-
-
 def init_env():
 
     #copy files to device
     lock_screen = CONFIG.getValue(DEVICENAME,'vlife_start_lockscreen')
-    if lock_screen.upper() != 'DEFAULT':
-        start_vlife_lockscreen(lock_screen)
-
     file_list = CONFIG.getValue(DEVICENAME,'pushfile').split(';')
-    try:
-        for fname in file_list:
-            orgi,dest = fname.split(':')
-            orgi = PATH('../ext/' + orgi)
-            if os.path.isfile(orgi):
-                DEVICE.device_file_operation('push',orgi,dest)
-    except Exception, ex:
-        print ex
-        logger.error(ex)
-        logger.debug("initial environment is failed")
-        sys.exit(0)
+    # try:
+    #     for fname in file_list:
+    #         orgi,dest = fname.split(':')
+    #         orgi = PATH('../ext/' + orgi)
+    #         if os.path.isfile(orgi):
+    #             DEVICE.device_file_operation('push',orgi,dest)
+    # except Exception, ex:
+    #     print ex
+    #     logger.error(ex)
+    #     logger.debug("initial environment is failed")
+    #     sys.exit(0)
 
 
 def run(dname):
@@ -897,7 +1000,6 @@ def run(dname):
     CONFIG = configuration.configuration()
     fname = PATH('../config/' + 'configuration.ini')
     CONFIG.fileConfig(fname)
-
 
     DEVICENAME = dname
     DEVICE = device.Device(DEVICENAME)

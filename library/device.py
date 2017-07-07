@@ -13,6 +13,7 @@ from os import path
 
 import configuration
 import myglobal
+import uiautomator
 
 
 class Device(object):
@@ -23,6 +24,7 @@ class Device(object):
         self.uid = uid
         self.pkg = self.CONFIG.getValue(uid,'apppackage')
         self.activity = self.CONFIG.getValue(uid,'appactivity')
+        self.name = self.CONFIG.getValue(uid,'name')
 
     @staticmethod
     def shellPIPE(cmd):
@@ -80,6 +82,19 @@ class Device(object):
         except Exception,ex:
             print ex
 
+    def gprs_operation(self, action):
+
+        if action.upper() == "OFF":
+            cmd = "".join(["adb -s ", self.uid, " shell svc data disable "])
+        if action.upper() == "ON":
+            cmd = "".join(["adb -s ",self.uid," shell svc data enable "])
+        try:
+
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            p.wait()
+        except Exception,ex:
+            print ex
+
     def device_file_operation(self, action, orig_path, dest_path):
 
         if action.upper() == "PULL":
@@ -109,6 +124,8 @@ class Device(object):
         if pkg != '':
             if action.upper() == "LAUNCH":
                 cmd = "".join(["adb -s ", self.uid, " shell am start -n ", pname])
+            if action.upper() == "START":
+                cmd = "".join(["adb -s ", self.uid, " shell am start ", pkg])
             if action.upper() == "CLOSE":
                 cmd = "".join(["adb -s ", self.uid, " shell am force-stop ", pkg])
             if action.upper() == "INSTALL":
@@ -150,7 +167,15 @@ class Device(object):
 
         # get resolution of screen
         width,height = self.get_screen_size()
-        cmd = "adb -s {0} shell input swipe {1} {2} {3} {4}".format(self.uid,int(width/2),int(height/2),int(width/2),int(height/4))
+        unlock_style = self.CONFIG.getValue(self.uid,'unlock_style')
+        unlock_location = self.CONFIG.getValue(self.uid,'unlock_location')
+        if unlock_style.upper() == 'LANDSCAPE':
+            cmd = "adb -s {0} shell input swipe {1} {2} {3} {4}".format(self.uid,int(width/5),int(height/2),int(width/5*4),int(height/2))
+        else:
+            if unlock_location.upper() == 'CENTER':
+                cmd = "adb -s {0} shell input swipe {1} {2} {3} {4}".format(self.uid,int(width/2),int(height/2),int(width/2),int(height/4))
+            if unlock_location.upper() == 'BOTTOM':
+                cmd = "adb -s {0} shell input swipe {1} {2} {3} {4} {5}".format(self.uid,int(width/2),int(height/4*3),int(width/2),int(0),int(200))
         self.shellPIPE(cmd)
         sleep(2)
 
@@ -172,11 +197,11 @@ class Device(object):
 
         if cmd != "":
             out = self.shellPIPE(cmd)
-            if screen_action == "ON":
+            if screen_action.upper() == "ON":
                 while out.find("state=OFF") != -1:
                     cmd = "".join(["adb -s ", self.uid, " shell input keyevent 26"])
                     out = self.shellPIPE(cmd)
-            elif screen_action == "OFF":
+            elif screen_action.upper() == "OFF":
                 while out.find("state=ON") != -1 :
                     cmd = "".join(["adb -s ", self.uid, " shell input keyevent 26"])
                     out = self.shellPIPE(cmd)
@@ -205,6 +230,10 @@ class Device(object):
         if version < 6:
             expe_time = datetime.datetime.strftime(expe_time,'%Y%m%d.%H%M%S')
             cmd = 'adb -s {0} shell su 0 date -s {1} '.format(self.uid,expe_time)
+
+            if self.name.upper().find('VIVO') != -1:
+                cmd = 'adb -s {0} shell date -s {1} '.format(self.uid,expe_time)
+
         else:
             expe_time = datetime.datetime.strftime(expe_time,'%m%d%H%M%Y.00')
             cmd = 'adb -s {0} shell date {1} ; am broadcast -a android.intent.action.TIME_SET'.format(self.uid,expe_time)
@@ -316,8 +345,23 @@ class Device(object):
 
         cmd = "".join(["adb ", " kill-server "])
         self.shellPIPE(cmd)
+        sleep(2)
         cmd = "".join(["adb ", " start-server "])
         self.shellPIPE(cmd)
+
+    def do_popup_windows(self,number, find_text):
+
+        for i in range(number):
+            uiautomator.click_popup_window(self.uid,find_text)
+
+    def unlock_screen(self):
+
+        self.screen_on_off("OFF")
+        sleep(2)
+        self.screen_on_off("ON")
+        sleep(2)
+        self.emulate_swipe_action()
+        sleep(1)
 
 
 def get_userid_from_file(devicename):

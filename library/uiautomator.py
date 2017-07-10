@@ -41,7 +41,7 @@ class Element(object):
 
                 return Xpoint, Ypoint
 
-    def __elements(self, attrib, name):
+    def __elements(self, attrib, name, attribute='bounds'):
 
         # return list with multiple same arribute
         list = []
@@ -50,11 +50,15 @@ class Element(object):
         treeIter = tree.iter(tag="node")
         for elem in treeIter:
             if elem.attrib[attrib] == name:
-                bounds = elem.attrib["bounds"]
-                coord = self.pattern.findall(bounds)
-                Xpoint = (int(coord[2]) - int(coord[0])) / 2.0 + int(coord[0])
-                Ypoint = (int(coord[3]) - int(coord[1])) / 2.0 + int(coord[1])
-                list.append((Xpoint, Ypoint))
+                if attribute == 'bounds':
+                    bounds = elem.attrib[attribute]
+                    coord = self.pattern.findall(bounds)
+                    Xpoint = (int(coord[2]) - int(coord[0])) / 2.0 + int(coord[0])
+                    Ypoint = (int(coord[3]) - int(coord[1])) / 2.0 + int(coord[1])
+                    list.append((Xpoint, Ypoint))
+                else:
+                    value = elem.attrib[attribute]
+                    list.append(value)
         return list
 
     def findElementByName(self, name):
@@ -71,12 +75,12 @@ class Element(object):
     def findElementsByClass(self, className):
         return self.__elements("class", className)
 
-    def findElementById(self, id):
+    def findElementById(self, id, attribute='bounds'):
 
-        return self.__element("resource-id",id)
+        return self.__element("resource-id",id,attribute)
 
-    def findElementsById(self, id):
-        return self.__elements("resource-id",id)
+    def findElementsById(self, id,attribute='bounds'):
+        return self.__elements("resource-id",id,attribute)
 
 
 class Event(object):
@@ -103,6 +107,38 @@ def click_popup_window(uid,findstr):
         if e1 is not None:
             event.touch(e1[0], e1[1])
             time.sleep(1)
+
+
+def click_element_by_id(uid,id,index):
+
+    element = Element(uid)
+    event = Event(uid)
+
+    find_eles = element.findElementsById(id)
+    i = 0
+    for el in find_eles:
+        if i == index:
+            event.touch(el[0], el[1])
+            time.sleep(1)
+            break
+        else:
+            i += 1
+
+
+def get_element_attribute(uid,id,index,attrib):
+
+    element = Element(uid)
+
+    find_eles = element.findElementsById(id,attribute=attrib)
+    i = 0
+    for el in find_eles:
+        if i == index:
+            return el
+            break
+        else:
+            i += 1
+
+    return ''
 
 if __name__ == '__main__':
 

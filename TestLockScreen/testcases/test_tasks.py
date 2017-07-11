@@ -39,6 +39,7 @@ class TestTask(unittest.TestCase):
         self.result = False
         self.log_count = 1
         self.double_process = False
+        self.proc_name = 'lockscreen'
 
         for title in self.omit_cases.split(':'):
             if self._testMethodName.find(title) != -1:
@@ -48,7 +49,9 @@ class TestTask(unittest.TestCase):
 
         # only connect wifi
         DEVICE.gprs_operation('OFF')
+        sleep(5)
         DEVICE.wifi_operation('ON')
+        sleep(5)
 
     def tearDown(self):
 
@@ -75,7 +78,9 @@ class TestTask(unittest.TestCase):
 
         # only connect wifi
         DEVICE.gprs_operation('OFF')
+        sleep(5)
         DEVICE.wifi_operation('ON')
+        sleep(5)
 
         # close all adb to avoid 5037 port occupation
         desktop.close_all_program('adb')
@@ -88,6 +93,20 @@ class TestTask(unittest.TestCase):
         if exc_list and exc_list[-1][0] is self:
             return exc_list[-1][1]
 
+    def set_init_env(self):
+
+        switcher = {
+            'test_1': 'ON:ON',
+            'test_2': 'ON:OFF',
+            'test_3': 'OFF:ON',
+            'test_4': 'OFF:OFF'
+        }
+
+        value = self._testMethodName[0:6]
+        action = switcher.get(value,'ON:ON').split(':')
+        self.set_magazine_app_switch(action[0])
+        self.set_security_magazine_switch(action[1])
+
     def dump_log_start(self, service,filter_condition):
 
         name =''.join([self._testMethodName,'_',str(self.log_count)])
@@ -95,6 +114,7 @@ class TestTask(unittest.TestCase):
         self.log_count += 1
         self.log_reader = dumplog.DumpLogcatFileReader(self.log_name,DEVICENAME,service,filter_condition)
         self.log_reader.clear_logcat()
+        print 'start to log in log'
         self.log_reader.start()
 
     def dump_log_stop(self):
@@ -105,7 +125,14 @@ class TestTask(unittest.TestCase):
 
         pid_list = []
         try:
-            for name in (self.slave_main_process, self.master_service):
+            if self.double_process:
+                plist = [self.slave_main_process, self.master_service]
+            elif self.proc_name == 'lockscreen':
+                plist = [self.master_service]
+            else:
+                plist = [self.slave_main_process]
+
+            for name in plist:
                 pid = dumplog.DumpLogcatFileReader.get_PID(DEVICENAME,name)
                 if str(pid) > 0:
                     pid[0] = pid[0].strip()
@@ -122,6 +149,8 @@ class TestTask(unittest.TestCase):
         pid = self.get_pid()
         #pid = ['17142','1062']
         contens = []
+        if self.double_process:
+            logger.info('This is a case of double process, expected log lines are 2')
         with open(self.log_name) as reader:
             for line in reader:
                 # remove redundance space
@@ -144,12 +173,11 @@ class TestTask(unittest.TestCase):
                     continue
 
         # 验证双进程日志
-        print len(contens)
         if len(contens) == 2 and self.double_process:
             result = True
 
         if not result:
-            logger.error('Not found special log information')
+            logger.debug('Not found special log information')
 
         return result
 
@@ -173,7 +201,7 @@ class TestTask(unittest.TestCase):
 
         DEVICE.app_operation('START', service=self.slave_service)
         sleep(1)
-        findstr = [u'安装',u'允许',u'确定']
+        findstr = [u'开启',u'安装',u'允许',u'确定']
         DEVICE.do_popup_windows(6,findstr)
 
         # click setting button
@@ -201,7 +229,10 @@ class TestTask(unittest.TestCase):
         DEVICE.do_popup_windows(2,[u'关闭'])
         sleep(1)
         #return back to HOME
+        DEVICE.send_keyevent(4)
+        sleep(3)
         DEVICE.send_keyevent(3)
+        sleep(3)
 
     def set_security_magazine_switch(self,action):
 
@@ -229,103 +260,108 @@ class TestTask(unittest.TestCase):
 
     ####### 以下测试用例 杂志开关,仅WIFI都是开#####
     #杂志锁屏打开，网络无→W
-    def test_100_env(self):
+    # def test_100_env(self):
+    #
+    #     self.set_magazine_app_switch('ON')
+    #     self.set_security_magazine_switch('ON')
+    #     self.assertEqual(1,1)
 
-        self.set_magazine_app_switch('ON')
-        self.set_security_magazine_switch('ON')
-        self.assertEqual(1,1)
+    # def test_101_double_proc_gprs_to_wifi(self):
+    #
+    #     self.double_process = True
+    #     self.start_app()
+    #     DEVICE.send_keyevent(3)
+    #
+    #     DEVICE.wifi_operation('OFF')
+    #     sleep(3)
+    #     DEVICE.gprs_operation('ON')
+    #     sleep(3)
+    #
+    #     # 更新时间到一天后
+    #     DEVICE.update_android_time(1,interval_unit='day')
+    #     sleep(1)
+    #     self.dump_log_start(self.master_service,'')
+    #     DEVICE.gprs_operation('OFF')
+    #     sleep(15)
+    #     DEVICE.wifi_operation('ON')
+    #     sleep(60)
+    #     self.dump_log_stop()
+    #
+    #     self.result = self.filter_log_result()
+    #     self.assertEqual(self.result,True)
+    #
+    # def test_107_double_proc_none_to_wifi(self):
+    #
+    #     self.double_process = True
+    #     self.start_app()
+    #     DEVICE.send_keyevent(3)
+    #     # close all network
+    #     DEVICE.wifi_operation('OFF')
+    #     sleep(3)
+    #     DEVICE.gprs_operation('OFF')
+    #     sleep(3)
+    #
+    #     # 更新时间到一天后
+    #     DEVICE.update_android_time(1,interval_unit='day')
+    #     sleep(1)
+    #     self.dump_log_start(self.master_service,'')
+    #     DEVICE.wifi_operation('ON')
+    #     sleep(60)
+    #     self.dump_log_stop()
+    #
+    #     self.result = self.filter_log_result()
+    #     self.assertEqual(self.result,True)
 
-    def test_101_network_gprs_to_wifi(self):
-
-        self.double_process = True
-        self.start_app()
-        DEVICE.send_keyevent(3)
-
-        DEVICE.wifi_operation('OFF')
-        DEVICE.gprs_operation('ON')
-        sleep(3)
-        if self.double_process:
-            self.dump_log_start(self.master_service,'')
-        else:
-            self.dump_log_start(self.slave_main_process, '')
-        # 更新时间到一天后
-        DEVICE.update_android_time(1,interval_unit='day')
-        DEVICE.gprs_operation('OFF')
-        sleep(15)
-        DEVICE.wifi_operation('ON')
-        sleep(60)
-        self.dump_log_stop()
-
-        self.result = self.filter_log_result()
-        self.assertEqual(self.result,True)
-
-    def test_107_network_none_to_wifi(self):
-
-        self.double_process = True
-        self.start_app()
-        DEVICE.send_keyevent(3)
-        # close all network
-        DEVICE.wifi_operation('OFF')
-        sleep(3)
-        DEVICE.gprs_operation('OFF')
-        sleep(3)
-        if self.double_process:
-            self.dump_log_start(self.master_service,'')
-        else:
-            self.dump_log_start(self.slave_main_process, '')
-        # 更新时间到一天后
-        DEVICE.update_android_time(1,interval_unit='day')
-        DEVICE.gprs_operation('ON')
-        sleep(3)
-        DEVICE.wifi_operation('ON')
-        sleep(60)
-        self.dump_log_stop()
-
-        self.result = self.filter_log_result()
-        self.assertEqual(self.result,True)
-
-    def test_102_lockscreen_WIFIOPEN_SCREEN_OFF_ON(self):
-
-        logger.debug('STEPS: WIFI_OPEN>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON')
-        self.start_app()
-        DEVICE.send_keyevent(3)
-        # close all network
-        DEVICE.wifi_operation('ON')
-        sleep(3)
-        self.dump_log_start(self.master_service,'')
-
-        # 更新时间到一天后
-        DEVICE.update_android_time(1,interval_unit='day')
-        DEVICE.screen_on_off('OFF')
-        sleep(3)
-        DEVICE.screen_on_off('ON')
-        sleep(60)
-        self.dump_log_stop()
-
-        self.result = self.filter_log_result()
-        self.assertEqual(self.result,True)
-
-    def test_103_lockscreen_GPRSOPEN_SCREEN_OFF_ON(self):
-
-        logger.debug('STEPS: WIFI_CLOSE>GPRS_ON>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON')
-        self.start_app()
-        DEVICE.send_keyevent(3)
-        # close all network
-        DEVICE.wifi_operation('OFF')
-        DEVICE.gprs_operation('ON')
-        sleep(3)
-        self.dump_log_start(self.master_service,'')
-
-        # 更新时间到一天后
-        DEVICE.update_android_time(1,interval_unit='day')
-        DEVICE.screen_on_off('OFF')
-        sleep(3)
-        DEVICE.screen_on_off('ON')
-        sleep(60)
-        self.dump_log_stop()
-
-        self.result = self.filter_log_result()
-        self.assertEqual(self.result,False)
+    # def test_102_lockscreen_WIFIOPEN_SCREEN_OFF_ON(self):
+    #
+    #     logger.debug('STEPS: WIFI_OPEN>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON')
+    #     self.start_app()
+    #     DEVICE.send_keyevent(3)
+    #     # close all network
+    #     DEVICE.wifi_operation('ON')
+    #     sleep(3)
+    #
+    #     # 更新时间到一天后
+    #     DEVICE.update_android_time(1,interval_unit='day')
+    #     sleep(1)
+    #     self.dump_log_start(self.master_service,'')
+    #     DEVICE.screen_on_off('OFF')
+    #     sleep(3)
+    #     DEVICE.screen_on_off('ON')
+    #     sleep(1)
+    #     # unlock screen
+    #     DEVICE.emulate_swipe_action()
+    #     sleep(60)
+    #     self.dump_log_stop()
+    #
+    #     self.result = self.filter_log_result()
+    #     self.assertEqual(self.result,True)
+    #
+    # def test_103_lockscreen_GPRSOPEN_SCREEN_OFF_ON(self):
+    #
+    #     logger.debug('STEPS: WIFI_CLOSE>GPRS_ON>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON')
+    #     self.start_app()
+    #     DEVICE.send_keyevent(3)
+    #     # close all network
+    #     DEVICE.wifi_operation('OFF')
+    #     sleep(3)
+    #     DEVICE.gprs_operation('ON')
+    #     sleep(3)
+    #     # 更新时间到一天后
+    #     DEVICE.update_android_time(1,interval_unit='day')
+    #     sleep(1)
+    #     self.dump_log_start(self.master_service,'')
+    #     #亮灭屏
+    #     DEVICE.screen_on_off('OFF')
+    #     sleep(3)
+    #     DEVICE.screen_on_off('ON')
+    #     sleep(1)
+    #     DEVICE.emulate_swipe_action()
+    #     sleep(30)
+    #     self.dump_log_stop()
+    #
+    #     self.result = self.filter_log_result()
+    #     self.assertEqual(self.result,False)
 
     def test_104_lockscreen_WIFIOPEN_SCREEN_OFF_ON2(self):
 
@@ -334,15 +370,17 @@ class TestTask(unittest.TestCase):
         DEVICE.send_keyevent(3)
         # close all network
         DEVICE.wifi_operation('ON')
-        sleep(3)
-        self.dump_log_start(self.master_service,'')
-
+        sleep(5)
         # 更新时间到两小时后
         DEVICE.update_android_time(2)
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
         DEVICE.screen_on_off('OFF')
         sleep(3)
         DEVICE.screen_on_off('ON')
-        sleep(60)
+        sleep(1)
+        DEVICE.emulate_swipe_action()
+        sleep(30)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -350,18 +388,20 @@ class TestTask(unittest.TestCase):
 
     def test_105_main_none_to_wifi(self):
 
+        self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
         # close all network
         DEVICE.gprs_operation('OFF')
+        sleep(3)
         DEVICE.wifi_operation('OFF')
         sleep(3)
-        self.dump_log_start(self.slave_main_process, '')
-
         # 更新时间到两小时后
         DEVICE.update_android_time(2)
+        sleep(1)
+        self.dump_log_start(self.slave_main_process, '')
         DEVICE.wifi_operation('ON')
-        sleep(60)
+        sleep(30)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -369,461 +409,492 @@ class TestTask(unittest.TestCase):
 
     def test_106_main_gprs_to_wifi(self):
 
+        self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
         # close all network
         DEVICE.wifi_operation('OFF')
-        sleep(3)
+        sleep(5)
         DEVICE.gprs_operation('ON')
-        sleep(3)
-        self.dump_log_start(self.slave_main_process, '')
-
+        sleep(5)
         # 更新时间到两小时后
         DEVICE.update_android_time(2)
+        sleep(1)
+        self.dump_log_start(self.slave_main_process, '')
+        DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')
-        sleep(60)
+        sleep(30)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
 
 
-    # ####### 以下测试用例 杂志开关是开,仅WIFI是关#####
-    #
-    # def test_200_env(self):
-    #
-    #     self.set_magazine_app_switch('OFF')
-    #     self.set_security_magazine_switch('ON')
-    #     self.assertEqual(1,1)
-    #
-    # def test_201_network_none_to_gprs(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(3)
-    #
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_202_lockscreen_wifi_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.master_service,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_203_main_wifi_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     #亮灭屏
-    #     DEVICE.screen_on_off('OFF')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_204_lockscreen_WIFIOPEN(self):
-    #
-    #     logger.debug('STEPS: WIFI_CLOSE>WIFI_ON>SCREEN_OFF_ON')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     DEVICE.wifi_operation('ON')
-    #     self.dump_log_start(self.master_service,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.screen_on_off('OFF')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_205_lockscreen_GPRSOPEN(self):
-    #
-    #     logger.debug('STEPS: WIFI_CLOSE>GPRS_ON>SCREEN_OFF_ON')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.master_service,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.screen_on_off('OFF')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,False)
-    #
-    # def test_206_main_none_to_wifi2(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_207_main_gprs_to_wifi(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.wifi_operation('OFF')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # ####以下测试用例 杂志开关是关,仅WIFI选项是开#####
-    #
-    # def test_300_env(self):
-    #
-    #     self.set_magazine_app_switch('ON')
-    #     self.set_security_magazine_switch('OFF')
-    #     self.assertEqual(1,1)
-    #
-    # def test_301_network_gprs_to_wifi(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #
-    #     DEVICE.wifi_operation('OFF')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_302_network_none_to_wifi(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(3)
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # ####以下测试用例 杂志开关是关,仅WIFI选项是关#####
-    #
-    # def test_400_env(self):
-    #
-    #     self.set_magazine_app_switch('OFF')
-    #     self.set_security_magazine_switch('OFF')
-    #     self.assertEqual(1,1)
-    #
-    # def test_401_network_none_to_wifi(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(3)
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_402_network_none_to_gprs(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(3)
-    #
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_403_network_gprs_to_wifi(self):
-    #
-    #     self.double_process = True
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #
-    #     DEVICE.wifi_operation('OFF')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     if self.double_process:
-    #         self.dump_log_start(self.master_service,'')
-    #     else:
-    #         self.dump_log_start(self.slave_main_process, '')
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_404_lockscreen_wifi_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.master_service,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_405_lockscreen_wifigprs_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('ON')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.master_service,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_406_main_none_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process, '')
-    #
-    #     # 更新时间到5小时55分钟
-    #     DEVICE.update_android_time(5)
-    #     sleep(1)
-    #     DEVICE.update_android_time(55,interval_unit='minutes')
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('OFF')
-    #     # 静置五分钟
-    #     sleep(5*60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,False)
-    #
-    # def test_407_main_wifigprs_to_wifi(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('ON')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.gprs_operation('OFF')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,False)
-    #
-    # def test_408_main_wifi_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('OFF')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     sleep(1)
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(15)
-    #     DEVICE.gprs_operation('ON')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,True)
-    #
-    # def test_409_main_wifigprs_to_gprs(self):
-    #
-    #     self.start_app()
-    #     DEVICE.send_keyevent(3)
-    #     # close all network
-    #     DEVICE.gprs_operation('ON')
-    #     DEVICE.wifi_operation('ON')
-    #     sleep(3)
-    #     self.dump_log_start(self.slave_main_process,'')
-    #
-    #     # 更新时间到一天后
-    #     DEVICE.update_android_time(1,interval_unit='day')
-    #     DEVICE.wifi_operation('OFF')
-    #     sleep(3)
-    #     DEVICE.screen_on_off('ON')
-    #     sleep(60)
-    #     self.dump_log_stop()
-    #
-    #     self.result = self.filter_log_result()
-    #     self.assertEqual(self.result,False)
+    ###### 以下测试用例 杂志开关是开,仅WIFI是关#####
+
+    def test_200_env(self):
+
+        self.set_magazine_app_switch('OFF')
+        self.set_security_magazine_switch('ON')
+        self.assertEqual(1,1)
+
+    def test_201_double_proc_none_to_gprs(self):
+
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        if self.double_process:
+            self.dump_log_start(self.master_service,'')
+        else:
+            self.dump_log_start(self.slave_main_process, '')
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_202_lockscreen_wifi_to_gprs(self):
+
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+
+        self.dump_log_start(self.master_service,'')
+        DEVICE.wifi_operation('OFF')
+        sleep(15)
+        DEVICE.gprs_operation('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_203_main_wifi_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_CLOSE>WIFI_ON>WIFI_OFF>GPRS_ON>SCREEN_ON')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+
+        self.dump_log_start(self.slave_main_process, '')
+        DEVICE.wifi_operation('OFF')
+        sleep(15)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        #亮屏
+        DEVICE.screen_on_off('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_204_lockscreen_WIFIOPEN(self):
+
+        logger.debug('STEPS: WIFI_CLOSE>WIFI_ON>SCREEN_OFF_ON')
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        DEVICE.wifi_operation('ON')
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.screen_on_off('OFF')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(1)
+        DEVICE.emulate_swipe_action()
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_205_lockscreen_GPRSOPEN(self):
+
+        logger.debug('STEPS: WIFI_CLOSE>GPRS_ON>SCREEN_OFF_ON')
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.screen_on_off('OFF')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(1)
+        DEVICE.emulate_swipe_action()
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_206_main_none_to_wifi2(self):
+
+        logger.debug('STEPS: WIFI_CLOSE>GPRS_OFF>UPDATE_TIME>WIFI_ON')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(5)
+        DEVICE.wifi_operation('OFF')
+        sleep(5)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.slave_main_process, '')
+        DEVICE.wifi_operation('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_207_main_gprs_to_wifi(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.wifi_operation('OFF')
+        sleep(5)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.slave_main_process, '')
+        DEVICE.gprs_operation('OFF')
+        sleep(15)
+        DEVICE.wifi_operation('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    ###以下测试用例 杂志开关是关,仅WIFI选项是开#####
+
+    def test_300_env(self):
+
+        self.set_magazine_app_switch('ON')
+        self.set_security_magazine_switch('OFF')
+        self.assertEqual(1,1)
+
+    def test_301_double_proc_gprs_to_wifi(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON')
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.gprs_operation('OFF')
+        sleep(15)
+        DEVICE.wifi_operation('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_302_double_proc_none_to_wifi(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>WIFI_ON')
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+
+        # close all network
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.wifi_operation('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+    #
+    ###以下测试用例 杂志开关是关,仅WIFI选项是关#####
+
+    def test_400_env(self):
+
+        self.set_magazine_app_switch('OFF')
+        self.set_security_magazine_switch('OFF')
+        self.assertEqual(1,1)
+
+    def test_401_double_proc_none_to_wifi(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>WIFI_ON')
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_402_double_proc_none_to_gprs(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>GPRS_ON>SCREEN_ON')
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_403_double_proc_gprs_to_wifi(self):
+
+        logger.debug('STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON')
+        self.double_process = True
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.gprs_operation('OFF')
+        sleep(15)
+        DEVICE.wifi_operation('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_404_lockscreen_wifi_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_OFF>WIFI_ON>UPDATE_TIME>WIFI_OFF>GPRS_ON')
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.wifi_operation('OFF')
+        sleep(15)
+        DEVICE.gprs_operation('ON')
+        sleep(30)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_405_lockscreen_wifigprs_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_ON>WIFI_ON>UPDATE_TIME>WIFI_OFF')
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.master_service,'')
+        DEVICE.wifi_operation('OFF')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_406_main_none_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_OFF>WIFI_OFF>UPDATE_TIME>GPRS_ON>WAITFOR_5MINS')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        # 更新时间到5小时55分钟
+        DEVICE.update_android_time(5)
+        sleep(2)
+        DEVICE.update_android_time(55,interval_unit='minutes')
+        sleep(1)
+        self.dump_log_start(self.slave_main_process, '')
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.screen_on_off('OFF')
+        # 静置五分钟
+        sleep(5*60)
+        self.dump_log_stop()
+
+        # 恢复初始状态
+        DEVICE.screen_on_off('ON')
+        sleep(1)
+        DEVICE.emulate_swipe_action()
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,False)
+
+    def test_407_main_wifigprs_to_wifi(self):
+
+        logger.debug('STEPS: GPRS_OFF>WIFI_OFF>UPDATE_TIME>GPRS_ON>WAITFOR_5MINS')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('ON')
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+        self.dump_log_start(self.slave_main_process,'')
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        DEVICE.gprs_operation('OFF')
+        sleep(40)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,False)
+
+    def test_408_main_wifi_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_OFF>WIFI_ON>UPDATE_TIME>WIFI_OFF>GPRS_ON>SCREEN_ON')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('OFF')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.slave_main_process,'')
+        DEVICE.wifi_operation('OFF')
+        sleep(15)
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(40)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,True)
+
+    def test_409_main_wifigprs_to_gprs(self):
+
+        logger.debug('STEPS: GPRS_ON>WIFI_ON>UPDATE_TIME>WIFI_OFF>SCREEN_ON')
+        self.proc_name = 'main'
+        self.start_app()
+        DEVICE.send_keyevent(3)
+        # close all network
+        DEVICE.gprs_operation('ON')
+        sleep(3)
+        DEVICE.wifi_operation('ON')
+        sleep(3)
+
+        # 更新时间到一天后
+        DEVICE.update_android_time(1,interval_unit='day')
+        sleep(1)
+        self.dump_log_start(self.slave_main_process,'')
+        DEVICE.wifi_operation('OFF')
+        sleep(3)
+        DEVICE.screen_on_off('ON')
+        sleep(60)
+        self.dump_log_stop()
+
+        self.result = self.filter_log_result()
+        self.assertEqual(self.result,False)
 
 
 def init_env():

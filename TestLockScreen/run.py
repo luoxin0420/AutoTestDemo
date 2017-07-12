@@ -44,7 +44,7 @@ if __name__ == '__main__':
             if cases.startswith('test_startup_register'):
                 test_startup_register.run(uid)
             if cases.startswith('test_tasks'):
-                test_tasks.run(uid)
+                test_tasks.run(uid,10)
 
 
     except Exception, ex:

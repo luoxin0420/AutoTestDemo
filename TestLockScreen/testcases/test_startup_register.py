@@ -70,8 +70,6 @@ class TestStartupRegister(unittest.TestCase):
             if self._testMethodName.find(title) != -1:
                 self.skipTest('this case is not supported by this version')
 
-        logger.info(self._testMethodName + ':Start')
-
     def tearDown(self):
 
         #self._outcomeForDoCleanups = result   # Python 3.2, 3.3
@@ -88,10 +86,19 @@ class TestStartupRegister(unittest.TestCase):
                 failure = self.list2reason(result.failures)
                 ok = not error and not failure
 
+                if LOOP_NUM == 0:
+                    RESULT_DICT.setdefault(self._testMethodName, {})['Result'] = []
+                    RESULT_DICT.setdefault(self._testMethodName, {})['Log'] = []
+
                 if ok:
-                    logger.info(self._testMethodName + ':PASS')
+                    RESULT_DICT[self._testMethodName]['Result'].append('PASS')
+                    RESULT_DICT[self._testMethodName]['Log'].append('')
                 else:
-                    logger.info(self._testMethodName + ':FAILED')
+                    RESULT_DICT[self._testMethodName]['Result'].append('FAILED')
+                    RESULT_DICT[self._testMethodName]['Log'].append(os.path.basename(self.log_name))
+                    # insert into fail case list
+                    FAIL_CASE.append(self._testMethodName)
+                    
         except Exception,ex:
                 print ex
 
@@ -111,10 +118,8 @@ class TestStartupRegister(unittest.TestCase):
 
     def dump_log_start(self, service,filter_condition):
 
-        name =''.join([self._testMethodName,'_',str(self.log_count)])
+        name = ''.join([self._testMethodName, '_', str(LOOP_NUM), '_', str(self.log_count)])
         self.log_name = os.path.join(LogPath,name)
-        # fobj = open(self.log_name,'w+')
-        # fobj.close()
         self.log_count += 1
         self.log_reader = dumplog.DumpLogcatFileReader(self.log_name,DEVICENAME,service,filter_condition)
         self.log_reader.clear_logcat()
@@ -149,8 +154,8 @@ class TestStartupRegister(unittest.TestCase):
             if pid1 == '' or uid1 == '':
                 pid1, uid1 = ln.split(':')
                 self.pid_uid[pid1] = uid1
-                logger.debug('The firstly find pid:' + str(pid1))
-                logger.debug('The firstly find uid:' + str(uid1))
+                print 'The firstly find pid:' + str(pid1)
+                print 'The firstly find uid:' + str(uid1)
             else:
                 pid, uid = ln.split(':')
                 if pid != pid1:
@@ -159,9 +164,9 @@ class TestStartupRegister(unittest.TestCase):
                         result = True
                     else:
                         result = False
-                        logger.error('uid should not same for different process')
-                    logger.debug('The secondly find pid:' + str(pid))
-                    logger.debug('The secondly find uid:' + str(uid))
+                        print 'uid should not same for different process'
+                    print 'The secondly find pid:' + str(pid)
+                    print 'The secondly find uid:' + str(uid)
                 else:
                     continue
         return result
@@ -171,33 +176,33 @@ class TestStartupRegister(unittest.TestCase):
         result = True
         build_type = CONFIG.getValue(DEVICENAME,'build_type')
 
-        logger.info('Actual lockscreen_id:' + lsid)
-        logger.info('Actual wallpaper_id:' + wpid)
+        print 'Actual lockscreen_id:' + lsid
+        print 'Actual wallpaper_id:' + wpid
 
         lsid = int(lsid)
         wpid = int(wpid)
 
         if build_type.upper() == 'MAGAZINE':
             if lsid !=0 or wpid !=0:
-                logger.error('id value is not right, expected value is 0')
+                print 'id value is not right, expected value is 0'
                 result = False
 
         if build_type.upper() == 'THEMELOCK':
             if lsid ==0 or wpid !=0:
-                logger.error('Excepted lockscreen_id is not 0')
-                logger.error('Excepted wallpaper_id is 0')
+                print 'Excepted lockscreen_id is not 0'
+                print 'Excepted wallpaper_id is 0'
                 result = False
 
         if build_type.upper() == 'WALLPAPER':
             if lsid !=0 or wpid ==0:
-                logger.error('Excepted lockscreen_id is  0')
-                logger.error('Excepted wallpaper_id is not 0')
+                print 'Excepted lockscreen_id is  0'
+                print 'Excepted wallpaper_id is not 0'
                 result = False
 
         if build_type.upper() == 'WALLPAPER_THEMELOCK':
             if lsid ==0 or wpid ==0:
-                logger.error('Excepted lockscreen_id is not 0')
-                logger.error('Excepted wallpaper_id is not 0')
+                print 'Excepted lockscreen_id is not 0'
+                print 'Excepted wallpaper_id is not 0'
                 result = False
 
         return result
@@ -206,8 +211,8 @@ class TestStartupRegister(unittest.TestCase):
     def verify_pkg_content(self,contents):
 
         result = True
-        #verify_node = ['uid','lockscreen_id','wallpaper_id','imei','mac','platform','product','product_soft','promotion']
-        verify_node = ['uid','lockscreen_id','wallpaper_id','imei','mac','platform','product','promotion']
+        verify_node = ['uid','lockscreen_id','wallpaper_id','imei','mac','platform','product','product_soft','promotion']
+        #verify_node = ['uid','lockscreen_id','wallpaper_id','imei','mac','platform','product','promotion']
         find_node = []
         for cont in contents:
 
@@ -228,7 +233,7 @@ class TestStartupRegister(unittest.TestCase):
         # verify if node not found
         diff_node = list(set(verify_node).difference(set(find_node)))
         for name in diff_node:
-            logger.error(name + ' node is not found ')
+            print name + ' node is not found '
             result = False
 
         # verify wallpaper/lockscreen_id according to different product
@@ -236,10 +241,10 @@ class TestStartupRegister(unittest.TestCase):
             lsid = self.filter_result['lockscreen_id']
             wpid = self.filter_result['wallpaper_id']
             result = self.verify_wallpaper_lockscreen_id(lsid,wpid)
-            logger.debug('wallpaper/lockscreen_id value is right')
+            print 'wallpaper/lockscreen_id value is right'
         except Exception,ex:
             result = False
-            logger.error('wallpaper/lockscreen_id value is not right')
+            print 'wallpaper/lockscreen_id value is not right'
 
         # start to verify detailed content
         for key, value in self.filter_result.items():
@@ -248,27 +253,27 @@ class TestStartupRegister(unittest.TestCase):
             if key == 'lockscreen_id' or key == 'wallpaper_id':
                 continue
             else:
-                logger.debug(key + ': actual value is ' + str(value))
+                print key + ': actual value is ' + str(value)
                 if key == 'mac':
                     exp_mac = DEVICE.get_device_mac_address()
-                    logger.debug('Expected mac address:' + str(exp_mac))
+                    print 'Expected mac address:' + str(exp_mac)
                     if exp_mac.upper().strip() != value.strip():
                         result = False
                         flag = True
                 if key == 'imei':
                     exp_imei = DEVICE.get_IMEI()
-                    logger.debug('Expected IMEI:' + str(exp_imei))
+                    print 'Expected IMEI:' + str(exp_imei)
                     if str(exp_imei) != str(value):
                         result = False
                         flag = True
                 if key == 'platform':
                     exp_ver = DEVICE.get_os_version()
-                    logger.debug('Expected Android Version:' + str(exp_ver))
+                    print 'Expected Android Version:' + str(exp_ver)
                     if exp_ver != int(value.split('.')[0]):
                         result = False
                         flag = True
             if flag:
-                logger.error(key + ': value is not right')
+                print key + ': value is not right'
 
         return result
 
@@ -291,7 +296,7 @@ class TestStartupRegister(unittest.TestCase):
                     if action == 'activation':
                         if text.find(self.slave_main_process) != -1 and text.startswith(findstr):
                             result = True
-                            logger.debug('Find log:' + line)
+                            print 'Find log:' + line
                             break
 
                     # 验证注册的日志,查找key:uid 并得到value
@@ -303,7 +308,7 @@ class TestStartupRegister(unittest.TestCase):
                                     if not self.double_process:
                                         result = True
                                         self.reg_uid = temp[1]
-                                        logger.debug('Find log:' + line)
+                                        print 'Find log:' + line
                                         break
                                     else:
                                         # pid:uid
@@ -340,13 +345,10 @@ class TestStartupRegister(unittest.TestCase):
                     vpid = lp.split(':::')
                     if vpid[0] == p:
                         contents.append(vpid[1])
-                logger.debug('Verify login package content,current PID:' + str(p))
+                print 'Verify login package content,current PID:' + str(p)
                 result = self.verify_pkg_content(contents)
                 if not result:
                     break
-
-        if not result:
-            logger.error('Not found special log information')
 
         return result
 
@@ -458,13 +460,13 @@ class TestStartupRegister(unittest.TestCase):
     def cover_install_app(self):
 
         self.close_app()
-        logger.debug('Install the third of party application')
+        print 'Install the third of party application'
         self.install_thirdapp('INSTALL')
         sleep(2)
-        logger.debug('close main process')
+        print 'close main process'
         self.close_app()
         sleep(2)
-        logger.debug('Cover install the third of party application')
+        print 'Cover install the third of party application'
         self.install_thirdapp('COVER_INSTALL')
         DEVICE.app_operation('UNINSTALL',service='com.vlife.qateam.advhelp')
         sleep(2)
@@ -486,7 +488,7 @@ class TestStartupRegister(unittest.TestCase):
                 t.start()
                 sleep(3)
             t.join()
-        except Exception,ex:
+        except Exception, ex:
              print ex
 
     #第一次安装第三方APP
@@ -555,10 +557,10 @@ class TestStartupRegister(unittest.TestCase):
         except Exception,ex:
             print ex
         if self.get_pid() == 0:
-            logger.info('main process is killed successfully')
+            print 'main process is killed successfully'
             self.assertEqual(0,0)
         else:
-            logger.error('main process is not killed')
+            print 'main process is not killed'
             self.assertEqual(0,1)
 
         # Start monitor log
@@ -631,7 +633,7 @@ class TestStartupRegister(unittest.TestCase):
             self.dump_log_start(self.slave_main_process, '')
         sleep(sleep_time)
         self.dump_log_stop()
-        self.result = self.filter_log_result(action=act,findstr=ftr)
+        self.result = self.filter_log_result(action=act, findstr=ftr)
 
     # 测试注册过程
     # 第一次注册，然后清缓存，再次注册，生成不同的uid
@@ -711,7 +713,7 @@ class TestStartupRegister(unittest.TestCase):
     # 第一次注册失败在断网情况下，重新联网注册成功
     def test_register_205_Reregister_RecoveryConnect(self):
 
-        logger.debug('WIFI connection disconnected, then reboot device')
+        print 'WIFI connection disconnected, then reboot device'
         DEVICE.wifi_operation('OFF')
         sleep(5)
         DEVICE.gprs_operation('OFF')
@@ -731,7 +733,7 @@ class TestStartupRegister(unittest.TestCase):
             self.set_device_theme(self.set_theme_pkg, 'system')
 
         # reconnect network
-        logger.debug('WIFI connected, then reboot device')
+        print 'WIFI connected, then reboot device'
         DEVICE.gprs_operation('ON')
         sleep(5)
         DEVICE.wifi_operation('ON')
@@ -783,7 +785,7 @@ class TestStartupRegister(unittest.TestCase):
         # self.pid_uid = {}
 
         # clear and startup main process
-        logger.debug('clear and reboot device again, complete new register')
+        print 'clear and reboot device again, complete new register'
         self.first_register()
         self.assertEqual(2,len(self.pid_uid))
         if len(prev_pid_uid) == len(self.pid_uid):
@@ -801,7 +803,7 @@ class TestStartupRegister(unittest.TestCase):
         prev_pid_uid = self.double_process_first_register()
 
         # reboot device
-        logger.debug('only reboot device, expected uid is same')
+        print 'only reboot device, expected uid is same'
         DEVICE.device_reboot()
         sleep(25)
         self.unlock_screen()
@@ -823,7 +825,7 @@ class TestStartupRegister(unittest.TestCase):
         prev_pid_uid = self.double_process_first_register()
 
         # kill process and reboot device
-        logger.debug('Kill process and reboot device, expected uid is same')
+        print 'Kill process and reboot device, expected uid is same'
         self.close_app()
         DEVICE.device_reboot()
         sleep(25)
@@ -845,7 +847,7 @@ class TestStartupRegister(unittest.TestCase):
         prev_pid_uid = self.double_process_first_register()
 
         # update time
-        logger.debug('Update time and switch WIFI, expected uid is same')
+        print 'Update time and switch WIFI, expected uid is same'
         if self.set_theme:
             self.set_device_theme(self.set_theme_pkg, 'vlife')
         DEVICE.update_android_time(6)
@@ -867,7 +869,7 @@ class TestStartupRegister(unittest.TestCase):
     def test_300_login_pkg_content(self):
 
         self.first_register()
-        self.result = self.filter_log_result('login','jabber:iq:auth;jabber:iq:userinfo')
+        self.result = self.filter_log_result('login', 'jabber:iq:auth; jabber:iq:userinfo')
         self.assertEqual(True,self.result)
 
     #log in multiple times, pkg content is same
@@ -886,11 +888,11 @@ class TestStartupRegister(unittest.TestCase):
                     print prev_filter_result
                     print self.filter_result
                     prev_uid = prev_filter_result['uid']
-                    logger.info('previous_uid:' + prev_uid)
+                    print 'previous_uid:' + prev_uid
                     curr_uid = self.filter_result['uid']
-                    logger.info('current_uid:' + curr_uid)
+                    print 'current_uid:' + curr_uid
                     if prev_uid == curr_uid:
-                        logger.error('uid is same after clear cache')
+                        print 'uid is same after clear cache'
                 except Exception,ex:
                     print 'uid is not found'
                 d1 = self.filter_result
@@ -989,14 +991,16 @@ def init_env():
     #             DEVICE.device_file_operation('push',orgi,dest)
     # except Exception, ex:
     #     print ex
-    #     logger.error(ex)
-    #     logger.debug("initial environment is failed")
+    #     print ex)
+    #     print "initial environment is failed")
     #     sys.exit(0)
 
 
-def run(dname):
+def run(dname,loop=1):
 
-    global DEVICENAME, logger, CONFIG, DEVICE,LogPath
+    global DEVICENAME, CONFIG, DEVICE,LogPath
+    global LOOP_NUM, RESULT_DICT, FAIL_CASE
+    
     CONFIG = configuration.configuration()
     fname = PATH('../config/' + 'configuration.ini')
     CONFIG.fileConfig(fname)
@@ -1005,28 +1009,36 @@ def run(dname):
     DEVICE = device.Device(DEVICENAME)
 
     # initial test environment
-    logname = desktop.get_log_name(dname,'TestStartupRegister')
-    LogPath = os.path.dirname(os.path.abspath(logname))
-    #logger = desktop.create_logger(logname)
-    logger = desktop.Logger(logname)
     init_env()
 
-
     # run test case
-    utest_log = os.path.join(os.path.dirname(os.path.abspath(logname)),'unit.txt')
-    fileobj = file(utest_log,'a+')
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestStartupRegister)
-    unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
+    logname = desktop.get_log_name(dname,'TestStartupRegister')
+    LogPath = os.path.dirname(os.path.abspath(logname))
+    utest_log = os.path.join(LogPath,'unittest.html')
+
+    RESULT_DICT = {}
+    FAIL_CASE = []
+    try:
+        for LOOP_NUM in range(loop):
+            fileobj = file(utest_log,'a+')
+            suite = unittest.TestLoader().loadTestsFromTestCase(TestStartupRegister)
+            #unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
+            runner = HTMLTestRunner.HTMLTestRunner(stream=fileobj,verbosity=2,title='Register_Login Testing Report', description = 'Test Result',)
+            runner.run(suite)
+            fileobj.close()
+            sleep(5)
+            if LOOP_NUM == loop - 1:
+                desktop.summary_result(utest_log, True, RESULT_DICT)
+            else:
+                desktop.summary_result(utest_log, False, RESULT_DICT)
+    except Exception,ex:
+        print ex
     fileobj.close()
 
-    # alltests=newTestSuite.Suit()
-    # alltests.addtest(TestStartupRegister("test_304_relogin_in_1minReboot"))
-    # runner =HTMLTestRunner.HTMLTestRunner(stream=fileobj,verbosity=2,title='Startup_register testing report',description='Test Reslt',)
-    # runner.run(alltests)
 
 if __name__ == '__main__':
 
-    run("ZX1G22TG4F")
+    run("ZX1G22TG4F", 2)
 
 
 

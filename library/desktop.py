@@ -173,6 +173,60 @@ def get_file_rows(filename):
         print ex
     return count
 
+
+def summary_result(logname,flag,RESULT_DICT):
+
+    #logname = r'E:\AutoTestDemo\TestLockScreen\log\20170713\ZX1G22TG4F_Nesux6\1523TestTasks\unittest.html'
+    #RESULT_DICT = {'TEST1':{'Result':['pass','fail'],'Log': ['test1','test2']},'TEST2':{'Result':['pass','fail'],'Log':['test1','test2']}}
+    count = get_file_rows(logname)
+    report = os.path.join(os.path.dirname(logname),'summary_report.html')
+    count2 = get_file_rows(report)
+    if not flag:
+        with open(report, 'a+') as wfile, open(logname) as rfile:
+            i = 1
+            for line in rfile:
+                if i > count2:
+                    wfile.write(line)
+                i += 1
+    else:
+        summary_table = '''
+        <h1>Summary Report</h1>
+        <table id = 'summary_table'>
+    <tr id = 'summary_header_row'>
+    <th>TestCase_Name</th>
+    <th>Test_Result</th>
+    <th>Log</th>
+    </tr>
+    <tr align="right">
+    ${content}
+    </tr>
+    </table>
+    '''
+        lines = ''
+        for key, value in RESULT_DICT.items():
+
+            result = '<Br/>'.join(value['Result'])
+            log = '<Br/>'.join(value['Log'])
+            single = ''.join(['<tr><td>',key,'</td>','<td>',result,'</td>','<td>',log,'</td><tr>'])
+            lines = lines + single
+
+        summary_table = summary_table.replace('${content}',lines)
+
+        i = 1
+        with open(report, 'a+') as wfile, open(logname) as rfile:
+            for line in rfile:
+                if i > count2:
+                    if line.find('</body>') == -1:
+                        wfile.write(line)
+                    else:
+                        if count - i == 1:
+                            summary_table += '</body>'
+                            wfile.write(summary_table)
+                        else:
+                            wfile.write(line)
+                i += 1
+
+
 class Logger:
 
     FOREGROUND_WHITE = 0x0007

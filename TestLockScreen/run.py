@@ -42,10 +42,9 @@ if __name__ == '__main__':
         case_list = config.getValue(uid,'test_list').split(';')
         for cases in case_list:
             if cases.startswith('test_startup_register'):
-                test_startup_register.run(uid)
+                test_startup_register.run(uid, 2)
             if cases.startswith('test_tasks'):
-                test_tasks.run(uid,2)
-
+                test_tasks.run(uid, 5)
 
     except Exception, ex:
         print ex

@@ -285,7 +285,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -311,7 +310,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -332,7 +330,6 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -359,12 +356,13 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
         sleep(1)
-        #亮灭屏
+
+        # 亮灭屏
         DEVICE.screen_on_off('OFF')
         sleep(3)
         DEVICE.screen_on_off('ON')
@@ -469,7 +467,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -493,7 +491,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -518,7 +516,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
 
@@ -528,7 +526,7 @@ class TestTask(unittest.TestCase):
         sleep(15)
         DEVICE.gprs_operation('ON')
         sleep(3)
-        #亮屏
+        # 亮屏
         DEVICE.screen_on_off('ON')
         sleep(30)
         self.dump_log_stop()
@@ -543,7 +541,6 @@ class TestTask(unittest.TestCase):
         DEVICE.send_keyevent(3)
         DEVICE.wifi_operation('ON')
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -569,7 +566,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -597,7 +593,6 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('OFF')
         sleep(5)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process, '')
@@ -621,7 +616,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process, '')
@@ -655,7 +649,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -675,12 +669,11 @@ class TestTask(unittest.TestCase):
         self.start_app()
         DEVICE.send_keyevent(3)
 
-
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -712,7 +705,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -737,7 +729,6 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -760,7 +751,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -783,7 +774,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -807,7 +798,6 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -860,7 +850,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-        # 更新时间到一天后
+       
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process,'')
@@ -884,7 +874,6 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process,'')
@@ -912,7 +901,6 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process,'')
@@ -994,14 +982,13 @@ def summary_result(logname,flag):
                             wfile.write(summary_table)
                         else:
                             wfile.write(line)
-                i +=1
+                i += 1
 
 
 def run(dname,loop=1):
 
     global DEVICENAME,CONFIG, DEVICE, LogPath
     global LOOP_NUM, RESULT_DICT, FAIL_CASE
-
 
     CONFIG = configuration.configuration()
     fname = PATH('../config/' + 'configuration.ini')
@@ -1013,14 +1000,12 @@ def run(dname,loop=1):
     # initial test environment
     init_env()
 
-
     # run test case
     logname = desktop.get_log_name(dname,'TestTasks')
     LogPath = os.path.dirname(os.path.abspath(logname))
     utest_log = os.path.join(LogPath,'unittest.html')
 
-
-    ####RESULT_DICT format {casename:{Result:['PASS','PASS'],Log:['','']}}#####
+    # ##RESULT_DICT format {casename:{Result:['PASS','PASS'],Log:['','']}}#####
     RESULT_DICT = {}
     FAIL_CASE = []
     try:
@@ -1034,8 +1019,8 @@ def run(dname,loop=1):
                     suite.addTest(TestTask(name))
             FAIL_CASE = []
             # The other format of report, but extend column is diffcult
-            #unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
-            #runner = HtmlTestRunner.HTMLTestRunner(output=DEVICENAME,template=PATH('../ext/' + 'report_template.html'))
+            # unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
+            # runner = HtmlTestRunner.HTMLTestRunner(output=DEVICENAME,template=PATH('../ext/' + 'report_template.html'))
             if suite.countTestCases() > 0:
                 runner =HTMLTestRunner.HTMLTestRunner(stream=fileobj2,verbosity=2,title='Task Testing Report',description='Test Result',)
                 runner.run(suite)

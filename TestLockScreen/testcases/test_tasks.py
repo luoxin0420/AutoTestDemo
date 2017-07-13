@@ -3,6 +3,7 @@
 __author__ = 'Xuxh'
 
 import os
+import sys
 try:
     import unittest2 as unittest
 except(ImportError):
@@ -49,8 +50,6 @@ class TestTask(unittest.TestCase):
         if LOOP_NUM != 0:
             self.set_init_env()
 
-        #logger.info(self._testMethodName + ':Start')
-
         # only connect wifi
         DEVICE.gprs_operation('OFF')
         sleep(5)
@@ -77,11 +76,9 @@ class TestTask(unittest.TestCase):
                     RESULT_DICT.setdefault(self._testMethodName, {})['Log'] = []
 
                 if ok:
-                    #logger.info(self._testMethodName + ':PASS')
                     RESULT_DICT[self._testMethodName]['Result'].append('PASS')
                     RESULT_DICT[self._testMethodName]['Log'].append('')
                 else:
-                    #logger.info(self._testMethodName + ':FAILED')
                     RESULT_DICT[self._testMethodName]['Result'].append('FAILED')
                     RESULT_DICT[self._testMethodName]['Log'].append(os.path.basename(self.log_name))
                     # insert into fail case list
@@ -269,11 +266,12 @@ class TestTask(unittest.TestCase):
 
     ##### 以下测试用例 杂志开关,仅WIFI都是开#####
     ###杂志锁屏打开，网络无→W
-    # def test_100_env(self):
-    #
-    #     self.set_magazine_app_switch('ON')
-    #     self.set_security_magazine_switch('ON')
-    #     self.assertEqual(1,1)
+    def test_100_env(self):
+
+        print 'Security Magazine:ON > Magazine APP:ON'
+        self.set_magazine_app_switch('ON')
+        self.set_security_magazine_switch('ON')
+        self.assertEqual(1,1)
 
     def test_101_double_proc_gprs_to_wifi(self):
 
@@ -307,7 +305,7 @@ class TestTask(unittest.TestCase):
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
@@ -326,14 +324,14 @@ class TestTask(unittest.TestCase):
         self.assertEqual(self.result,True)
 
     def test_102_lockscreen_WIFIOPEN_SCREEN_OFF_ON(self):
-    
+
         print 'STEPS: WIFI_OPEN>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -347,16 +345,16 @@ class TestTask(unittest.TestCase):
         DEVICE.emulate_swipe_action()
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_103_lockscreen_GPRSOPEN_SCREEN_OFF_ON(self):
-    
+
         print 'STEPS: WIFI_CLOSE>GPRS_ON>UPDATE_DAY_AFTER_1>SCREEN_OFF_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('ON')
@@ -374,16 +372,16 @@ class TestTask(unittest.TestCase):
         DEVICE.emulate_swipe_action()
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
+
     def test_104_lockscreen_WIFIOPEN_SCREEN_OFF_ON2(self):
-    
+
         print 'STEPS: WIFI_ON>UPDATE_HOUR_AFTER_2>SCREEN_OFF_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('ON')
         sleep(5)
         # 更新时间到两小时后
@@ -398,17 +396,17 @@ class TestTask(unittest.TestCase):
         DEVICE.emulate_swipe_action()
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
+
     def test_105_main_none_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>GPRS_OFF>WIFI_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('OFF')
@@ -421,17 +419,17 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
+
     def test_106_main_gprs_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>GPRS_OFF>WIFI_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(5)
         DEVICE.gprs_operation('ON')
@@ -446,26 +444,27 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
-    
+
+
     ###### 以下测试用例 杂志开关是开,仅WIFI是关#####
-    
+
     def test_200_env(self):
-    
+
+        print 'Security Magazine:ON > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('ON')
         self.assertEqual(1,1)
-    
+
     def test_201_double_proc_none_to_gprs(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>GPRS_ON>WIFI_ON'
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
@@ -480,16 +479,16 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_202_lockscreen_wifi_to_gprs(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>WIFI_OFF>GPRS_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('ON')
@@ -504,17 +503,17 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_203_main_wifi_to_gprs(self):
-    
+
         print 'STEPS: GPRS_CLOSE>WIFI_ON>WIFI_OFF>GPRS_ON>SCREEN_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('ON')
@@ -522,7 +521,7 @@ class TestTask(unittest.TestCase):
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-    
+
         self.dump_log_start(self.slave_main_process, '')
         sleep(1)
         DEVICE.wifi_operation('OFF')
@@ -533,17 +532,17 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_204_lockscreen_WIFIOPEN(self):
-    
+
         print 'STEPS: WIFI_CLOSE>WIFI_ON>SCREEN_OFF_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
         DEVICE.wifi_operation('ON')
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -556,12 +555,12 @@ class TestTask(unittest.TestCase):
         DEVICE.emulate_swipe_action()
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_205_lockscreen_GPRSOPEN(self):
-    
+
         print 'STEPS: WIFI_CLOSE>GPRS_ON>SCREEN_OFF_ON'
         DEVICE.wifi_operation('OFF')
         sleep(3)
@@ -569,7 +568,7 @@ class TestTask(unittest.TestCase):
         DEVICE.send_keyevent(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -582,22 +581,22 @@ class TestTask(unittest.TestCase):
         DEVICE.emulate_swipe_action()
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_206_main_none_to_wifi2(self):
-    
+
         print 'STEPS: WIFI_CLOSE>GPRS_OFF>UPDATE_TIME>WIFI_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(5)
         DEVICE.wifi_operation('OFF')
         sleep(5)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -606,22 +605,22 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_207_main_gprs_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(5)
         DEVICE.gprs_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -632,25 +631,26 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     #以下测试用例 杂志开关是关,仅WIFI选项是开#####
-    
+
     def test_300_env(self):
-    
+
+        print 'Security Magazine:OFF > Magazine APP:ON'
         self.set_magazine_app_switch('ON')
         self.set_security_magazine_switch('OFF')
         self.assertEqual(1,1)
-    
+
     def test_301_double_proc_gprs_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON'
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-    
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('ON')
@@ -664,18 +664,18 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_302_double_proc_none_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>WIFI_ON'
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-    
-        # close all network
+
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
@@ -687,30 +687,31 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     ###以下测试用例 杂志开关是关,仅WIFI选项是关#####
-    
+
     def test_400_env(self):
-    
+
+        print 'Security Magazine:OFF > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('OFF')
         self.assertEqual(1,1)
-    
+
     def test_401_double_proc_none_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>WIFI_ON'
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -720,22 +721,22 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_402_double_proc_none_to_gprs(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_OFF>UPDATE_TIME>GPRS_ON>SCREEN_ON'
         self.double_process = True
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.wifi_operation('OFF')
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -745,12 +746,12 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_403_double_proc_gprs_to_wifi(self):
-    
+
         print 'STEPS: WIFI_OFF>GPRS_ON>UPDATE_TIME>GPRS_OFF>WIFI_ON'
         self.double_process = True
         self.start_app()
@@ -768,16 +769,16 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_404_lockscreen_wifi_to_gprs(self):
-    
+
         print 'STEPS: GPRS_OFF>WIFI_ON>UPDATE_TIME>WIFI_OFF>GPRS_ON'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('ON')
@@ -791,21 +792,21 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(30)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_405_lockscreen_wifigprs_to_gprs(self):
-    
+
         print 'STEPS: GPRS_ON>WIFI_ON>UPDATE_TIME>WIFI_OFF'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -813,17 +814,17 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('OFF')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_406_main_none_to_gprs(self):
-    
+
         print 'STEPS: GPRS_OFF>WIFI_OFF>UPDATE_TIME>GPRS_ON>WAITFOR_5MINS'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('OFF')
@@ -840,21 +841,21 @@ class TestTask(unittest.TestCase):
         # 静置五分钟
         sleep(5*60)
         self.dump_log_stop()
-    
+
         # 恢复初始状态
         DEVICE.screen_on_off('ON')
         sleep(1)
         DEVICE.emulate_swipe_action()
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
+
     def test_407_main_wifigprs_to_wifi(self):
-    
+
         print 'STEPS: GPRS_ON>WIFI_ON>UPDATE_TIME>GPRS_OFF>'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.wifi_operation('ON')
@@ -867,22 +868,22 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(40)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
-    
+
     def test_408_main_wifi_to_gprs(self):
-    
+
         print 'STEPS: GPRS_OFF>WIFI_ON>UPDATE_TIME>WIFI_OFF>GPRS_ON>SCREEN_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('OFF')
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -895,22 +896,22 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(40)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,True)
-    
+
     def test_409_main_wifigprs_to_gprs(self):
-    
+
         print 'STEPS: GPRS_ON>WIFI_ON>UPDATE_TIME>WIFI_OFF>SCREEN_ON'
         self.proc_name = 'main'
         self.start_app()
         DEVICE.send_keyevent(3)
-        # close all network
+
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-    
+
         # 更新时间到一天后
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
@@ -921,7 +922,7 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(60)
         self.dump_log_stop()
-    
+
         self.result = self.filter_log_result()
         self.assertEqual(self.result,False)
 
@@ -931,67 +932,76 @@ def init_env():
     #copy files to device
     lock_screen = CONFIG.getValue(DEVICENAME,'vlife_start_lockscreen')
     file_list = CONFIG.getValue(DEVICENAME,'pushfile').split(';')
-    # try:
-    #     for fname in file_list:
-    #         orgi,dest = fname.split(':')
-    #         orgi = PATH('../ext/' + orgi)
-    #         if os.path.isfile(orgi):
-    #             DEVICE.device_file_operation('push',orgi,dest)
-    # except Exception, ex:
-    #     print ex
-    #     print "initial environment is failed"
-    #     sys.exit(0)
+    try:
+        for fname in file_list:
+            orgi,dest = fname.split(':')
+            orgi = PATH('../ext/' + orgi)
+            if os.path.isfile(orgi):
+                DEVICE.device_file_operation('push',orgi,dest)
+    except Exception, ex:
+        print ex
+        print "initial environment is failed"
+        sys.exit(0)
 
 
-def summary_result(logname):
+def summary_result(logname,flag):
 
-
+    #logname = r'E:\AutoTestDemo\TestLockScreen\log\20170713\ZX1G22TG4F_Nesux6\1523TestTasks\unittest.html'
     #RESULT_DICT = {'TEST1':{'Result':['pass','fail'],'Log': ['test1','test2']},'TEST2':{'Result':['pass','fail'],'Log':['test1','test2']}}
-    summary_table = '''
-    <table class="table_whole" border="1">
-<tr align="right">
-<th>TestCase_Name</th>
-<th>Test_Result</th>
-<th>Log</th>
-</tr>
-<tr align="right">
-${content}
-</tr>
-</table>
-'''
-    lines = ''
-    for key, value in RESULT_DICT.items():
-
-        result = '<Br/>'.join(value['Result'])
-        log = '<Br/>'.join(value['Log'])
-        single = ''.join(['<tr><td>',key,'</td>','<td>',result,'</td>','<td>',log,'</td><tr>'])
-        # print key)
-        # print result)
-        # print log)
-        lines = lines + single
-
-    summary_table = summary_table.replace('${content}',lines)
-    #print summary_table
     count = desktop.get_file_rows(logname)
-    report = os.path.join(os.path.dirname(logname),'summary_report2.html')
-    i = 1
-    with open(report, 'wb') as wfile, open(logname) as rfile:
-        for line in rfile:
-            if line.find('</body>') == -1:
-                wfile.write(line)
-            else:
-                if count - i == 1:
-                    summary_table += '</body>'
-                    wfile.write(summary_table)
-                else:
+    report = os.path.join(os.path.dirname(logname),'summary_report.html')
+    count2 = desktop.get_file_rows(report)
+    if not flag:
+        with open(report, 'a+') as wfile, open(logname) as rfile:
+            i = 1
+            for line in rfile:
+                if i > count2:
                     wfile.write(line)
-            i +=1
+                i += 1
+    else:
+        summary_table = '''
+        <h1>Summary Report</h1>
+        <table id = 'summary_table'>
+    <tr id = 'summary_header_row'>
+    <th>TestCase_Name</th>
+    <th>Test_Result</th>
+    <th>Log</th>
+    </tr>
+    <tr align="right">
+    ${content}
+    </tr>
+    </table>
+    '''
+        lines = ''
+        for key, value in RESULT_DICT.items():
+
+            result = '<Br/>'.join(value['Result'])
+            log = '<Br/>'.join(value['Log'])
+            single = ''.join(['<tr><td>',key,'</td>','<td>',result,'</td>','<td>',log,'</td><tr>'])
+            lines = lines + single
+
+        summary_table = summary_table.replace('${content}',lines)
+
+        i = 1
+        with open(report, 'a+') as wfile, open(logname) as rfile:
+            for line in rfile:
+                if i > count2:
+                    if line.find('</body>') == -1:
+                        wfile.write(line)
+                    else:
+                        if count - i == 1:
+                            summary_table += '</body>'
+                            wfile.write(summary_table)
+                        else:
+                            wfile.write(line)
+                i +=1
 
 
 def run(dname,loop=1):
 
     global DEVICENAME,CONFIG, DEVICE, LogPath
     global LOOP_NUM, RESULT_DICT, FAIL_CASE
+
 
     CONFIG = configuration.configuration()
     fname = PATH('../config/' + 'configuration.ini')
@@ -1008,27 +1018,36 @@ def run(dname,loop=1):
     logname = desktop.get_log_name(dname,'TestTasks')
     LogPath = os.path.dirname(os.path.abspath(logname))
     utest_log = os.path.join(LogPath,'unittest.html')
-    fileobj2 = file(utest_log,'a+')
+
 
     ####RESULT_DICT format {casename:{Result:['PASS','PASS'],Log:['','']}}#####
     RESULT_DICT = {}
     FAIL_CASE = []
-    for LOOP_NUM in range(loop):
+    try:
+        for LOOP_NUM in range(loop):
+            fileobj2 = file(utest_log,'a+')
+            if LOOP_NUM == 0:
+                suite = unittest.TestLoader().loadTestsFromTestCase(TestTask)
+            else:
+                suite = unittest.TestSuite()
+                for name in FAIL_CASE:
+                    suite.addTest(TestTask(name))
+            FAIL_CASE = []
+            # The other format of report, but extend column is diffcult
+            #unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
+            #runner = HtmlTestRunner.HTMLTestRunner(output=DEVICENAME,template=PATH('../ext/' + 'report_template.html'))
+            if suite.countTestCases() > 0:
+                runner =HTMLTestRunner.HTMLTestRunner(stream=fileobj2,verbosity=2,title='Task Testing Report',description='Test Result',)
+                runner.run(suite)
+            fileobj2.close()
+            sleep(5)
+            if LOOP_NUM == loop - 1:
+                summary_result(utest_log, True)
+            else:
+                summary_result(utest_log, False)
 
-        if LOOP_NUM == 0:
-            suite = unittest.TestLoader().loadTestsFromTestCase(TestTask)
-        else:
-            suite = unittest.TestSuite()
-            for name in FAIL_CASE:
-                suite.addTest(TestTask(name))
-        FAIL_CASE = []
-        #unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
-        #runner = HtmlTestRunner.HTMLTestRunner(output=DEVICENAME,template=PATH('../ext/' + 'report_template.html'))
-        runner =HTMLTestRunner.HTMLTestRunner(stream=fileobj2,verbosity=2,title='Task Testing Report',description='Test Result',)
-        runner.run(suite)
-    fileobj2.close()
-    sleep(5)
-    summary_result(RESULT_DICT,utest_log)
+    except Exception,ex:
+        print ex
 
 if __name__ == '__main__':
 

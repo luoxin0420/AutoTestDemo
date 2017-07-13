@@ -161,13 +161,16 @@ def unzip_file(fname,despath):
 def get_file_rows(filename):
 
     count = 0
-    thefile = open(filename, 'rb')
-    while True:
-        buffer = thefile.read(8192*1024)
-        if not buffer:
-            break
-        count += buffer.count('\n')
-    thefile.close()
+    try:
+        thefile = open(filename, 'rb')
+        while True:
+            buffer = thefile.read(8192*1024)
+            if not buffer:
+                break
+            count += buffer.count('\n')
+        thefile.close()
+    except Exception,ex:
+        print ex
     return count
 
 class Logger:

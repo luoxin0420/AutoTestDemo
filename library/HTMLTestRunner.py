@@ -363,12 +363,29 @@ a.popup_link:hover {
     border-collapse: collapse;
     border: 1px solid #777;
 }
+#summary_table {
+    width: 80%;
+    border-collapse: collapse;
+    border: 1px solid #777;
+}
+
+#summary_header_row {
+    font-weight: bold;
+    color: white;
+    background-color: #777;
+}
+
 #header_row {
     font-weight: bold;
     color: white;
     background-color: #777;
 }
 #result_table td {
+    border: 1px solid #777;
+    padding: 2px;
+}
+
+#summary_table td {
     border: 1px solid #777;
     padding: 2px;
 }

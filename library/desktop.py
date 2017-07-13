@@ -157,6 +157,19 @@ def unzip_file(fname,despath):
         else:
             zfile.extract(f,despath)
 
+
+def get_file_rows(filename):
+
+    count = 0
+    thefile = open(filename, 'rb')
+    while True:
+        buffer = thefile.read(8192*1024)
+        if not buffer:
+            break
+        count += buffer.count('\n')
+    thefile.close()
+    return count
+
 class Logger:
 
     FOREGROUND_WHITE = 0x0007

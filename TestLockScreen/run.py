@@ -16,7 +16,7 @@ from testcases import test_tasks
 if __name__ == '__main__':
 
     newParser = argparse.ArgumentParser()
-    #newParser.add_argument("-u", "--uid", dest="uid", help="Your device uid")
+
     newParser.add_argument("uid", help="Your device uid")
     newParser.add_argument("-l", "--ln", dest="lnum", default=1, type=int, help="Loop number")
     newParser.add_argument("-t", "--lt", dest="ltype", default='Only_Fail', type=str, help="Loop type")

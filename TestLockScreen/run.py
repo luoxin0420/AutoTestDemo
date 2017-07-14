@@ -16,9 +16,14 @@ from testcases import test_tasks
 if __name__ == '__main__':
 
     newParser = argparse.ArgumentParser()
-    newParser.add_argument("-u", "--uid", dest="uid", help="Your device uid")
+    #newParser.add_argument("-u", "--uid", dest="uid", help="Your device uid")
+    newParser.add_argument("uid", help="Your device uid")
+    newParser.add_argument("-l", "--ln", dest="lnum", default=1, type=int, help="Loop number")
+    newParser.add_argument("-t", "--lt", dest="ltype", default='Only_Fail', type=str, help="Loop type")
     args = newParser.parse_args()
     uid = args.uid
+    loop_number = args.lnum
+    loop_type = args.ltype
 
     if uid is None:
         sys.exit(0)
@@ -42,9 +47,9 @@ if __name__ == '__main__':
         case_list = config.getValue(uid,'test_list').split(';')
         for cases in case_list:
             if cases.startswith('test_startup_register'):
-                test_startup_register.run(uid, 2)
+                test_startup_register.run(uid, loop_number, loop_type)
             if cases.startswith('test_tasks'):
-                test_tasks.run(uid, 5)
+                test_tasks.run(uid, loop_number, loop_type)
 
     except Exception, ex:
         print ex

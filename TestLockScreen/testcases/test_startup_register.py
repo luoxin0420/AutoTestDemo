@@ -981,22 +981,20 @@ class TestStartupRegister(unittest.TestCase):
 def init_env():
 
     #copy files to device
-    lock_screen = CONFIG.getValue(DEVICENAME,'vlife_start_lockscreen')
     file_list = CONFIG.getValue(DEVICENAME,'pushfile').split(';')
-    # try:
-    #     for fname in file_list:
-    #         orgi,dest = fname.split(':')
-    #         orgi = PATH('../ext/' + orgi)
-    #         if os.path.isfile(orgi):
-    #             DEVICE.device_file_operation('push',orgi,dest)
-    # except Exception, ex:
-    #     print ex
-    #     print ex)
-    #     print "initial environment is failed")
-    #     sys.exit(0)
+    try:
+        for fname in file_list:
+            orgi,dest = fname.split(':')
+            orgi = PATH('../ext/' + orgi)
+            if os.path.isfile(orgi):
+                DEVICE.device_file_operation('push',orgi,dest)
+    except Exception, ex:
+        print ex
+        print "initial environment is failed"
+        sys.exit(0)
 
 
-def run(dname,loop=1):
+def run(dname, loop, rtype):
 
     global DEVICENAME, CONFIG, DEVICE,LogPath
     global LOOP_NUM, RESULT_DICT, FAIL_CASE
@@ -1020,11 +1018,20 @@ def run(dname,loop=1):
     FAIL_CASE = []
     try:
         for LOOP_NUM in range(loop):
+
             fileobj = file(utest_log,'a+')
-            suite = unittest.TestLoader().loadTestsFromTestCase(TestStartupRegister)
-            #unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
-            runner = HTMLTestRunner.HTMLTestRunner(stream=fileobj,verbosity=2,title='Register_Login Testing Report', description = 'Test Result',)
-            runner.run(suite)
+            if LOOP_NUM == 0 or rtype.upper() == 'ALL':
+                suite = unittest.TestLoader().loadTestsFromTestCase(TestStartupRegister)
+            else:
+                suite = unittest.TestSuite()
+                for name in FAIL_CASE:
+                    suite.addTest(TestStartupRegister(name))
+                FAIL_CASE = []
+
+            if suite.countTestCases() > 0:
+                runner = HTMLTestRunner.HTMLTestRunner(stream=fileobj,verbosity=2,title='Register_Login Testing Report', description = 'Test Result',)
+                runner.run(suite)
+
             fileobj.close()
             sleep(5)
             if LOOP_NUM == loop - 1:
@@ -1033,7 +1040,6 @@ def run(dname,loop=1):
                 desktop.summary_result(utest_log, False, RESULT_DICT)
     except Exception,ex:
         print ex
-    fileobj.close()
 
 
 if __name__ == '__main__':

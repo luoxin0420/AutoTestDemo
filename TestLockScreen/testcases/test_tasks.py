@@ -47,8 +47,8 @@ class TestTask(unittest.TestCase):
             if self._testMethodName.find(title) != -1:
                 self.skipTest('this case is not supported by this version')
 
-        # if LOOP_NUM != 0:
-        #     self.set_init_env()
+        if LOOP_NUM != 0 and not self.set_theme:
+            self.set_magazine_init_env()
 
         # only connect wifi
         DEVICE.gprs_operation('OFF')
@@ -93,6 +93,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(5)
 
+        if self.set_theme:
+            #self.set_device_theme(self.set_theme_pkg, 'system')
+            pass
         # close all adb to avoid 5037 port occupation
         desktop.close_all_program('adb')
         # restart adb server
@@ -104,7 +107,7 @@ class TestTask(unittest.TestCase):
         if exc_list and exc_list[-1][0] is self:
             return exc_list[-1][1]
 
-    def set_init_env(self):
+    def set_magazine_init_env(self):
 
         switcher = {
             'test_1': 'ON:ON',
@@ -189,8 +192,12 @@ class TestTask(unittest.TestCase):
 
     def start_app(self):
 
-        DEVICE.app_operation('START', service=self.slave_service)
-        sleep(5)
+        if not self.set_theme:
+            DEVICE.app_operation('START', service=self.slave_service)
+            sleep(5)
+        else:
+            # self.set_device_theme(self.set_theme_pkg, 'vlife')
+            pass
 
     def close_app(self):
 
@@ -202,6 +209,35 @@ class TestTask(unittest.TestCase):
         DEVICE.app_operation('CLEAR', service=self.slave_service)
         DEVICE.app_operation('CLEAR', service='com.android.systemui')
         sleep(5)
+
+    def set_device_theme(self, activity_name, theme_type):
+
+        # log in theme app like i theme
+        DEVICE.app_operation(action='LAUNCH',service=activity_name)
+        sleep(2)
+        if theme_type.upper()== 'VLIFE':
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'vlife_theme_path').split(',')
+        else:
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'system_theme_path').split(',')
+        element = uiautomator.Element(DEVICENAME)
+        event = uiautomator.Event(DEVICENAME)
+
+        for text in vlife_theme_path:
+            x = 0
+            y = 0
+            if text.find(':') == -1:
+                value = unicode(text)
+            # 因为一些点击文字没有响应，需要点击周边的元素
+            else:
+                value = unicode(text.split(':')[0])
+                x = text.split(':')[1]
+                y = text.split(':')[2]
+            ele = element.findElementByName(value)
+            if ele is not None:
+                event.touch(ele[0]-int(x), ele[1]-int(y))
+                sleep(2)
+        # return to HOME
+        DEVICE.send_keyevent(3)
 
     def set_magazine_app_switch(self,action):
 
@@ -451,6 +487,8 @@ class TestTask(unittest.TestCase):
 
     def test_200_env(self):
 
+        if self.set_theme:
+            self.skipTest()
         print 'Security Magazine:ON > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('ON')
@@ -633,6 +671,8 @@ class TestTask(unittest.TestCase):
 
     def test_300_env(self):
 
+        if self.set_theme:
+            self.skipTest()
         print 'Security Magazine:OFF > Magazine APP:ON'
         self.set_magazine_app_switch('ON')
         self.set_security_magazine_switch('OFF')
@@ -688,6 +728,8 @@ class TestTask(unittest.TestCase):
 
     def test_400_env(self):
 
+        if self.set_theme:
+            self.skipTest()
         print 'Security Magazine:OFF > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('OFF')

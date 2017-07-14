@@ -321,9 +321,11 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
+        self.dump_log_start(self.master_service,'')
+        sleep(2)
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
+        #self.dump_log_start(self.master_service,'')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -487,8 +489,6 @@ class TestTask(unittest.TestCase):
 
     def test_200_env(self):
 
-        if self.set_theme:
-            self.skipTest()
         print 'Security Magazine:ON > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('ON')
@@ -671,8 +671,6 @@ class TestTask(unittest.TestCase):
 
     def test_300_env(self):
 
-        if self.set_theme:
-            self.skipTest()
         print 'Security Magazine:OFF > Magazine APP:ON'
         self.set_magazine_app_switch('ON')
         self.set_security_magazine_switch('OFF')
@@ -690,13 +688,14 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
+        self.dump_log_start(self.master_service,'')
+        sleep(2)
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')
-        sleep(60)
+        sleep(40)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -714,11 +713,12 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
+        self.dump_log_start(self.master_service,'')
+        sleep(2)
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.wifi_operation('ON')
-        sleep(60)
+        sleep(40)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -728,8 +728,6 @@ class TestTask(unittest.TestCase):
 
     def test_400_env(self):
 
-        if self.set_theme:
-            self.skipTest()
         print 'Security Magazine:OFF > Magazine APP:OFF'
         self.set_magazine_app_switch('OFF')
         self.set_security_magazine_switch('OFF')
@@ -792,9 +790,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
+        sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')

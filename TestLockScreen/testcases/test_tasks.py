@@ -47,8 +47,8 @@ class TestTask(unittest.TestCase):
             if self._testMethodName.find(title) != -1:
                 self.skipTest('this case is not supported by this version')
 
-        if LOOP_NUM != 0:
-            self.set_init_env()
+        # if LOOP_NUM != 0:
+        #     self.set_init_env()
 
         # only connect wifi
         DEVICE.gprs_operation('OFF')
@@ -356,7 +356,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -467,7 +467,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -491,7 +491,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -516,7 +516,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
 
@@ -649,7 +649,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -673,7 +673,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('OFF')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -708,8 +708,6 @@ class TestTask(unittest.TestCase):
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
-        DEVICE.gprs_operation('ON')
-        sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
@@ -751,7 +749,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.gprs_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -774,7 +772,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.master_service,'')
@@ -850,7 +848,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
         DEVICE.wifi_operation('ON')
         sleep(3)
-       
+
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         self.dump_log_start(self.slave_main_process,'')
@@ -918,7 +916,6 @@ class TestTask(unittest.TestCase):
 def init_env():
 
     #copy files to device
-    lock_screen = CONFIG.getValue(DEVICENAME,'vlife_start_lockscreen')
     file_list = CONFIG.getValue(DEVICENAME,'pushfile').split(';')
     try:
         for fname in file_list:
@@ -932,60 +929,7 @@ def init_env():
         sys.exit(0)
 
 
-def summary_result(logname,flag):
-
-    #logname = r'E:\AutoTestDemo\TestLockScreen\log\20170713\ZX1G22TG4F_Nesux6\1523TestTasks\unittest.html'
-    #RESULT_DICT = {'TEST1':{'Result':['pass','fail'],'Log': ['test1','test2']},'TEST2':{'Result':['pass','fail'],'Log':['test1','test2']}}
-    count = desktop.get_file_rows(logname)
-    report = os.path.join(os.path.dirname(logname),'summary_report.html')
-    count2 = desktop.get_file_rows(report)
-    if not flag:
-        with open(report, 'a+') as wfile, open(logname) as rfile:
-            i = 1
-            for line in rfile:
-                if i > count2:
-                    wfile.write(line)
-                i += 1
-    else:
-        summary_table = '''
-        <h1>Summary Report</h1>
-        <table id = 'summary_table'>
-    <tr id = 'summary_header_row'>
-    <th>TestCase_Name</th>
-    <th>Test_Result</th>
-    <th>Log</th>
-    </tr>
-    <tr align="right">
-    ${content}
-    </tr>
-    </table>
-    '''
-        lines = ''
-        for key, value in RESULT_DICT.items():
-
-            result = '<Br/>'.join(value['Result'])
-            log = '<Br/>'.join(value['Log'])
-            single = ''.join(['<tr><td>',key,'</td>','<td>',result,'</td>','<td>',log,'</td><tr>'])
-            lines = lines + single
-
-        summary_table = summary_table.replace('${content}',lines)
-
-        i = 1
-        with open(report, 'a+') as wfile, open(logname) as rfile:
-            for line in rfile:
-                if i > count2:
-                    if line.find('</body>') == -1:
-                        wfile.write(line)
-                    else:
-                        if count - i == 1:
-                            summary_table += '</body>'
-                            wfile.write(summary_table)
-                        else:
-                            wfile.write(line)
-                i += 1
-
-
-def run(dname,loop=1):
+def run(dname, loop, rtype):
 
     global DEVICENAME,CONFIG, DEVICE, LogPath
     global LOOP_NUM, RESULT_DICT, FAIL_CASE
@@ -1008,30 +952,31 @@ def run(dname,loop=1):
     # ##RESULT_DICT format {casename:{Result:['PASS','PASS'],Log:['','']}}#####
     RESULT_DICT = {}
     FAIL_CASE = []
+
     try:
         for LOOP_NUM in range(loop):
-            fileobj2 = file(utest_log,'a+')
-            if LOOP_NUM == 0:
+
+            fileobj = file(utest_log,'a+')
+            if LOOP_NUM == 0 or rtype.upper() == 'ALL':
                 suite = unittest.TestLoader().loadTestsFromTestCase(TestTask)
             else:
                 suite = unittest.TestSuite()
                 for name in FAIL_CASE:
                     suite.addTest(TestTask(name))
-            FAIL_CASE = []
-            # The other format of report, but extend column is diffcult
-            # unittest.TextTestRunner(stream=fileobj,verbosity=2).run(suite)
-            # runner = HtmlTestRunner.HTMLTestRunner(output=DEVICENAME,template=PATH('../ext/' + 'report_template.html'))
-            if suite.countTestCases() > 0:
-                runner =HTMLTestRunner.HTMLTestRunner(stream=fileobj2,verbosity=2,title='Task Testing Report',description='Test Result',)
-                runner.run(suite)
-            fileobj2.close()
-            sleep(5)
-            if LOOP_NUM == loop - 1:
-                summary_result(utest_log, True)
-            else:
-                summary_result(utest_log, False)
+                FAIL_CASE = []
 
-    except Exception,ex:
+            if suite.countTestCases() > 0:
+                runner = HTMLTestRunner.HTMLTestRunner(stream=fileobj, verbosity=2, title='Task Testing Report', description='Test Result',)
+                runner.run(suite)
+            fileobj.close()
+            sleep(5)
+            # write log to summary report
+            if LOOP_NUM == loop - 1:
+                desktop.summary_result(utest_log, True, RESULT_DICT)
+            else:
+                desktop.summary_result(utest_log, False, RESULT_DICT)
+
+    except Exception, ex:
         print ex
 
 if __name__ == '__main__':

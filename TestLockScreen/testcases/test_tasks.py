@@ -348,9 +348,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
-        self.dump_log_start(self.master_service,'')
+        self.dump_log_start(self.master_service, '')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('ON')
         sleep(60)
@@ -368,9 +368,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.screen_on_off('OFF')
         sleep(3)
@@ -395,9 +395,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
 
         # 亮灭屏
@@ -470,10 +470,11 @@ class TestTask(unittest.TestCase):
         sleep(5)
         DEVICE.gprs_operation('ON')
         sleep(5)
+
+        self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
         # 更新时间到两小时后
         DEVICE.update_android_time(2)
-        sleep(1)
-        self.dump_log_start(self.slave_main_process, '')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -506,9 +507,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('ON')
         sleep(3)
@@ -555,10 +556,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
-
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(15)
@@ -631,9 +631,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('OFF')
         sleep(5)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('ON')
         sleep(30)
@@ -654,9 +654,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -674,7 +674,7 @@ class TestTask(unittest.TestCase):
         print 'Security Magazine:OFF > Magazine APP:ON'
         self.set_magazine_app_switch('ON')
         self.set_security_magazine_switch('OFF')
-        self.assertEqual(1,1)
+        self.assertEqual(1, 1)
 
     def test_301_double_proc_gprs_to_wifi(self):
 
@@ -688,9 +688,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        self.dump_log_start(self.master_service,'')
+        self.dump_log_start(self.master_service, '')
         sleep(2)
-        DEVICE.update_android_time(1,interval_unit='day')
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -699,7 +699,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,True)
+        self.assertEqual(self.result, True)
 
     def test_302_double_proc_none_to_wifi(self):
 
@@ -745,9 +745,11 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
+        self.dump_log_start(self.master_service, '')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
+        DEVICE.update_android_time(1, interval_unit='day')
+        sleep(1)
+
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
@@ -767,9 +769,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
+        self.dump_log_start(self.master_service, '')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.screen_on_off('ON')
@@ -890,9 +893,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(1)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(40)
@@ -913,9 +916,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(15)

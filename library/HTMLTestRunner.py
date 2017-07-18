@@ -1,3 +1,4 @@
+#coding=utf-8
 """
 A TestRunner for use with the Python unit testing framework. It
 generates a HTML report to show the result at a glance.
@@ -93,8 +94,11 @@ Version in 0.7.1
 import datetime
 import StringIO
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 import time
 import unittest
+import re
 from xml.sax import saxutils
 
 
@@ -175,6 +179,7 @@ class Template_mixin(object):
     0: 'pass',
     1: 'fail',
     2: 'error',
+    3:'skip'
     }
 
     DEFAULT_TITLE = 'Unit Test Report'
@@ -218,6 +223,14 @@ function showCase(level) {
                 tr.className = 'hiddenRow';
             }
         }
+        if (id.substr(0,2) == 'st') {
+            if (level > 1) {
+                tr.className = '';
+            }
+            else {
+                tr.className = 'hiddenRow';           
+            }
+        }
     }
 }
 
@@ -233,10 +246,15 @@ function showClassDetail(cid, count) {
             tid = 'p' + tid0;
             tr = document.getElementById(tid);
         }
+         if (!tr) {
+            tid = 's' + tid0;
+            tr = document.getElementById(tid);
+        }
         id_list[i] = tid;
         if (tr.className) {
             toHide = 0;
         }
+
     }
     for (var i = 0; i < count; i++) {
         tid = id_list[i];
@@ -308,7 +326,7 @@ function showOutput(id, name) {
 <style type="text/css" media="screen">
 body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; }
 table       { font-size: 100%; }
-pre         { }
+pre         { word-wrap:break-word;word-break:break-all;overflow:auto;}
 
 /* -- heading ---------------------------------------------------------------------- */
 h1 {
@@ -451,7 +469,9 @@ a.popup_link:hover {
     <td>Pass</td>
     <td>Fail</td>
     <td>Error</td>
+    <td>Skip</td>
     <td>View</td>
+    <td>Screenshot</td>
 </tr>
 %(test_list)s
 <tr id='total_row'>
@@ -460,7 +480,10 @@ a.popup_link:hover {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
-    <td>&nbsp;</td>
+    <td>%(skip)s</td>
+    <td> </td>
+    <td> </td>
+
 </tr>
 </table>
 """ # variables: (test_list, count, Pass, fail, error)
@@ -472,15 +495,17 @@ a.popup_link:hover {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
+    <td>%(skip)s</td>
     <td><a href="javascript:showClassDetail('%(cid)s',%(count)s)">Detail</a></td>
+    <td> </td>
 </tr>
-""" # variables: (style, desc, count, Pass, fail, error, cid)
+""" # variables: (style, desc, count, Pass, fail,skip, error, cid)
 
 
     REPORT_TEST_WITH_OUTPUT_TMPL = r"""
 <tr id='%(tid)s' class='%(Class)s'>
     <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
-    <td colspan='5' align='center'>
+    <td colspan='6' align='center'>
 
     <!--css div popup start-->
     <a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_%(tid)s')" >
@@ -498,6 +523,9 @@ a.popup_link:hover {
     <!--css div popup end-->
 
     </td>
+    <td align='center'>
+    <a  %(hidde)s  href="%(image)s">picture_shot</a>
+    </td>
 </tr>
 """ # variables: (tid, Class, style, desc, status)
 
@@ -505,7 +533,10 @@ a.popup_link:hover {
     REPORT_TEST_NO_OUTPUT_TMPL = r"""
 <tr id='%(tid)s' class='%(Class)s'>
     <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
-    <td colspan='5' align='center'>%(status)s</td>
+    <td colspan='6' align='center'>%(status)s</td>
+    <td align='center'>
+    <a  %(hidde)s  href="%(image)s">picture_shot</a>
+    </td>
 </tr>
 """ # variables: (tid, Class, style, desc, status)
 
@@ -536,6 +567,7 @@ class _TestResult(TestResult):
         self.stdout0 = None
         self.stderr0 = None
         self.success_count = 0
+        self.skipped_count=0#add skipped_count
         self.failure_count = 0
         self.error_count = 0
         self.verbosity = verbosity
@@ -594,6 +626,17 @@ class _TestResult(TestResult):
         else:
             sys.stderr.write('.')
 
+    def addSkip(self, test, reason):
+        self.skipped_count+= 1
+        TestResult.addSkip(self, test,reason)
+        output = self.complete_output()
+        self.result.append((3, test,'',reason))
+        if self.verbosity > 1:
+            sys.stderr.write('skip ')
+            sys.stderr.write(str(test))
+            sys.stderr.write('\n')
+        else:
+            sys.stderr.write('s')
     def addError(self, test, err):
         self.error_count += 1
         TestResult.addError(self, test, err)
@@ -624,13 +667,17 @@ class _TestResult(TestResult):
 class HTMLTestRunner(Template_mixin):
     """
     """
-    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None):
+    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None,name=None):
         self.stream = stream
         self.verbosity = verbosity
         if title is None:
             self.title = self.DEFAULT_TITLE
         else:
             self.title = title
+        if name is None:
+            self.name =''
+        else:
+            self.name = name
         if description is None:
             self.description = self.DEFAULT_DESCRIPTION
         else:
@@ -674,6 +721,7 @@ class HTMLTestRunner(Template_mixin):
         status = []
         if result.success_count: status.append('Pass %s'    % result.success_count)
         if result.failure_count: status.append('Failure %s' % result.failure_count)
+        if result.skipped_count: status.append('Skip %s' % result.skipped_count)
         if result.error_count:   status.append('Error %s'   % result.error_count  )
         if status:
             status = ' '.join(status)
@@ -727,29 +775,38 @@ class HTMLTestRunner(Template_mixin):
     def _generate_report(self, result):
         rows = []
         sortedResult = self.sortResult(result.result)
+        i = 0
         for cid, (cls, cls_results) in enumerate(sortedResult):
             # subtotal for a class
-            np = nf = ne = 0
+            np = nf =ns=ne = 0#np代表pass个数，nf代表fail,ns代表skip,ne,代表error
             for n,t,o,e in cls_results:
                 if n == 0: np += 1
                 elif n == 1: nf += 1
+                elif n==3:ns+=1
                 else: ne += 1
 
             # format class description
-            if cls.__module__ == "__main__":
+            # if cls.__module__ == "__main__":
+            #     name = cls.__name__
+            # else:
+            #     name = "%s.%s" % (cls.__module__, cls.__name__)
                 name = cls.__name__
-            else:
-                name = "%s.%s" % (cls.__module__, cls.__name__)
-            doc = cls.__doc__ and cls.__doc__.split("\n")[0] or ""
+            try:
+                core_name=self.name[i]
+            except Exception,e:
+                core_name =''
+            # doc = (cls.__doc__)+core_name and (cls.__doc__+core_name).split("\n")[0] or ""
+            doc = (cls.__doc__)  and cls.__doc__ .split("\n")[0] or ""
             desc = doc and '%s: %s' % (name, doc) or name
-
+            i=i+1            #生成每个TestCase类的汇总数据，对于报告中的
             row = self.REPORT_CLASS_TMPL % dict(
                 style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
                 desc = desc,
-                count = np+nf+ne,
+                count = np+nf+ne+ns,
                 Pass = np,
                 fail = nf,
                 error = ne,
+                skip=ns,
                 cid = 'c%s' % (cid+1),
             )
             rows.append(row)
@@ -759,23 +816,23 @@ class HTMLTestRunner(Template_mixin):
 
         report = self.REPORT_TMPL % dict(
             test_list = ''.join(rows),
-            count = str(result.success_count+result.failure_count+result.error_count),
+            count = str(result.success_count+result.failure_count+result.error_count+result.skipped_count),
             Pass = str(result.success_count),
             fail = str(result.failure_count),
             error = str(result.error_count),
+            skip=str(result.skipped_count)
         )
         return report
-
 
     def _generate_report_test(self, rows, cid, tid, n, t, o, e):
         # e.g. 'pt1.1', 'ft1.1', etc
         has_output = bool(o or e)
-        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid+1,tid+1)
+        tid = (n == 0 and 'p' or n==3 and 's' or 'f') + 't%s.%s' % (cid+1,tid+1)
         name = t.id().split('.')[-1]
         doc = t.shortDescription() or ""
         desc = doc and ('%s: %s' % (name, doc)) or name
         tmpl = has_output and self.REPORT_TEST_WITH_OUTPUT_TMPL or self.REPORT_TEST_NO_OUTPUT_TMPL
-
+        uo1=""
         # o and e should be byte string because they are collected from stdout and stderr?
         if isinstance(o,str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
@@ -795,14 +852,31 @@ class HTMLTestRunner(Template_mixin):
             output = saxutils.escape(uo+ue),
         )
 
+        if "shot_picture_name" in str(saxutils.escape(str(ue))):
+            hidde_status=''
+            pattern = re.compile(r'AssertionError:.*?shot_picture_name=(.*)',re.S)
+            shot_name = re.search(pattern,str(saxutils.escape(str(e))))
+            try:
+                #image_url="http://192.168.99.105/contractreport/screenshot/"+time.strftime("%Y-%m-%d", time.localtime(time.time()))+"/"+shot_name.group(1)+".png"
+                image_url = shot_name.group(1)
+            except Exception,e:
+                #image_url = "http://192.168.99.105/contractreport/screenshot/" + time.strftime("%Y-%m-%d",time.localtime(time.time()))
+                image_url = ''
+
+        else:
+            hidde_status = '''hidden="hidden"'''
+            image_url=''
         row = tmpl % dict(
             tid = tid,
             Class = (n == 0 and 'hiddenRow' or 'none'),
-            style = n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'none'),
+            style=n == 2 and 'errorCase' or (n == 1 and 'failCase') or (n == 3 and 'skipCase' or 'none'),
             desc = desc,
             script = script,
+            hidde=hidde_status,
+            image=image_url,
             status = self.STATUS[n],
         )
+
         rows.append(row)
         if not has_output:
             return

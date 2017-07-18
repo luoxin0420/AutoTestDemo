@@ -47,8 +47,8 @@ class TestTask(unittest.TestCase):
             if self._testMethodName.find(title) != -1:
                 self.skipTest('this case is not supported by this version')
 
-        # if LOOP_NUM != 0:
-        #     self.set_init_env()
+        if LOOP_NUM != 0 and not self.set_theme:
+            self.set_magazine_init_env()
 
         # only connect wifi
         DEVICE.gprs_operation('OFF')
@@ -87,12 +87,15 @@ class TestTask(unittest.TestCase):
         except Exception,ex:
                 print ex
 
-        # only connect wifi
-        DEVICE.gprs_operation('OFF')
-        sleep(5)
-        DEVICE.wifi_operation('ON')
-        sleep(5)
+        # # only connect wifi
+        # DEVICE.gprs_operation('OFF')
+        # sleep(5)
+        # DEVICE.wifi_operation('ON')
+        # sleep(5)
 
+        if self.set_theme:
+            #self.set_device_theme(self.set_theme_pkg, 'system')
+            pass
         # close all adb to avoid 5037 port occupation
         desktop.close_all_program('adb')
         # restart adb server
@@ -104,7 +107,7 @@ class TestTask(unittest.TestCase):
         if exc_list and exc_list[-1][0] is self:
             return exc_list[-1][1]
 
-    def set_init_env(self):
+    def set_magazine_init_env(self):
 
         switcher = {
             'test_1': 'ON:ON',
@@ -153,7 +156,7 @@ class TestTask(unittest.TestCase):
 
         return pid_list
 
-    def filter_log_result(self, findstr='GetPushMessageTask starting'):
+    def filter_log_result(self, findstr='Judgment result can run , task type is'):
 
         result = False
         pid = self.get_pid()
@@ -189,8 +192,12 @@ class TestTask(unittest.TestCase):
 
     def start_app(self):
 
-        DEVICE.app_operation('START', service=self.slave_service)
-        sleep(5)
+        if not self.set_theme:
+            DEVICE.app_operation('START', service=self.slave_service)
+            sleep(5)
+        else:
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
+            pass
 
     def close_app(self):
 
@@ -202,6 +209,35 @@ class TestTask(unittest.TestCase):
         DEVICE.app_operation('CLEAR', service=self.slave_service)
         DEVICE.app_operation('CLEAR', service='com.android.systemui')
         sleep(5)
+
+    def set_device_theme(self, activity_name, theme_type):
+
+        # log in theme app like i theme
+        DEVICE.app_operation(action='LAUNCH',service=activity_name)
+        sleep(2)
+        if theme_type.upper()== 'VLIFE':
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'vlife_theme_path').split(',')
+        else:
+            vlife_theme_path = CONFIG.getValue(DEVICENAME,'system_theme_path').split(',')
+        element = uiautomator.Element(DEVICENAME)
+        event = uiautomator.Event(DEVICENAME)
+
+        for text in vlife_theme_path:
+            x = 0
+            y = 0
+            if text.find(':') == -1:
+                value = unicode(text)
+            # 因为一些点击文字没有响应，需要点击周边的元素
+            else:
+                value = unicode(text.split(':')[0])
+                x = text.split(':')[1]
+                y = text.split(':')[2]
+            ele = element.findElementByName(value)
+            if ele is not None:
+                event.touch(ele[0]-int(x), ele[1]-int(y))
+                sleep(2)
+        # return to HOME
+        DEVICE.send_keyevent(3)
 
     def set_magazine_app_switch(self,action):
 
@@ -285,9 +321,11 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
+        self.dump_log_start(self.master_service,'')
+        sleep(2)
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
+        #self.dump_log_start(self.master_service,'')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -310,9 +348,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
-        self.dump_log_start(self.master_service,'')
+        self.dump_log_start(self.master_service, '')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('ON')
         sleep(60)
@@ -330,9 +368,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.screen_on_off('OFF')
         sleep(3)
@@ -357,9 +395,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
 
         # 亮灭屏
@@ -372,7 +410,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,False)
+        self.assertEqual(self.result,True)
 
     def test_104_lockscreen_WIFIOPEN_SCREEN_OFF_ON2(self):
 
@@ -432,10 +470,11 @@ class TestTask(unittest.TestCase):
         sleep(5)
         DEVICE.gprs_operation('ON')
         sleep(5)
-        # 更新时间到两小时后
-        DEVICE.update_android_time(2)
-        sleep(1)
+
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        # 更新时间到两小时后
+        DEVICE.update_android_time(1)
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -468,14 +507,14 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.screen_on_off('ON')
-        sleep(30)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -517,10 +556,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
-
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(15)
@@ -575,7 +613,7 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(1)
         DEVICE.emulate_swipe_action()
-        sleep(30)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -593,9 +631,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('OFF')
         sleep(5)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('ON')
         sleep(30)
@@ -616,9 +654,9 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process, '')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -636,7 +674,7 @@ class TestTask(unittest.TestCase):
         print 'Security Magazine:OFF > Magazine APP:ON'
         self.set_magazine_app_switch('ON')
         self.set_security_magazine_switch('OFF')
-        self.assertEqual(1,1)
+        self.assertEqual(1, 1)
 
     def test_301_double_proc_gprs_to_wifi(self):
 
@@ -650,9 +688,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
+        self.dump_log_start(self.master_service, '')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')
@@ -660,7 +699,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,True)
+        self.assertEqual(self.result, True)
 
     def test_302_double_proc_none_to_wifi(self):
 
@@ -674,9 +713,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
+        self.dump_log_start(self.master_service,'')
+        sleep(2)
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
@@ -705,9 +745,11 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
+        self.dump_log_start(self.master_service, '')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
+        DEVICE.update_android_time(1, interval_unit='day')
+        sleep(1)
+
         DEVICE.wifi_operation('ON')
         sleep(60)
         self.dump_log_stop()
@@ -727,9 +769,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
+        self.dump_log_start(self.master_service, '')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
         sleep(1)
-        self.dump_log_start(self.master_service,'')
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.screen_on_off('ON')
@@ -750,9 +793,10 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.master_service,'')
+        sleep(2)
+        DEVICE.update_android_time(1, interval_unit='day')
+        sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')
@@ -797,7 +841,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
 
         DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
+        sleep(2)
         self.dump_log_start(self.master_service,'')
         DEVICE.wifi_operation('OFF')
         sleep(60)
@@ -849,9 +893,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(1)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(40)
@@ -872,9 +916,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(15)
@@ -899,9 +943,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(3)
@@ -910,7 +954,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,False)
+        self.assertEqual(self.result, True)
 
 
 def init_env():

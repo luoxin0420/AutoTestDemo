@@ -221,7 +221,14 @@ function showCase(level) {
             }
             else {
                 tr.className = 'hiddenRow';
-            }        }        if (id.substr(0,2) == 'st') {           if (level > 1) {               tr.className = '';            }           else {               tr.className = 'hiddenRow';           }
+            }
+        }
+        if (id.substr(0,2) == 'st') {
+            if (level > 1) {
+                tr.className = '';
+            }
+            else {
+                tr.className = 'hiddenRow';           
             }
         }
     }
@@ -817,7 +824,6 @@ class HTMLTestRunner(Template_mixin):
         )
         return report
 
-
     def _generate_report_test(self, rows, cid, tid, n, t, o, e):
         # e.g. 'pt1.1', 'ft1.1', etc
         has_output = bool(o or e)
@@ -849,7 +855,7 @@ class HTMLTestRunner(Template_mixin):
         if "shot_picture_name" in str(saxutils.escape(str(ue))):
             hidde_status=''
             pattern = re.compile(r'AssertionError:.*?shot_picture_name=(.*)',re.S)
-            shot_name =re.search(pattern,str(saxutils.escape(str(e))))
+            shot_name = re.search(pattern,str(saxutils.escape(str(e))))
             try:
                 #image_url="http://192.168.99.105/contractreport/screenshot/"+time.strftime("%Y-%m-%d", time.localtime(time.time()))+"/"+shot_name.group(1)+".png"
                 image_url = shot_name.group(1)
@@ -867,7 +873,7 @@ class HTMLTestRunner(Template_mixin):
             desc = desc,
             script = script,
             hidde=hidde_status,
-        image=image_url,
+            image=image_url,
             status = self.STATUS[n],
         )
 

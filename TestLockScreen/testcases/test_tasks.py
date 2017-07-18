@@ -87,11 +87,11 @@ class TestTask(unittest.TestCase):
         except Exception,ex:
                 print ex
 
-        # only connect wifi
-        DEVICE.gprs_operation('OFF')
-        sleep(5)
-        DEVICE.wifi_operation('ON')
-        sleep(5)
+        # # only connect wifi
+        # DEVICE.gprs_operation('OFF')
+        # sleep(5)
+        # DEVICE.wifi_operation('ON')
+        # sleep(5)
 
         if self.set_theme:
             #self.set_device_theme(self.set_theme_pkg, 'system')
@@ -156,7 +156,7 @@ class TestTask(unittest.TestCase):
 
         return pid_list
 
-    def filter_log_result(self, findstr='GetPushMessageTask starting'):
+    def filter_log_result(self, findstr='Judgment result can run , task type is'):
 
         result = False
         pid = self.get_pid()
@@ -196,7 +196,7 @@ class TestTask(unittest.TestCase):
             DEVICE.app_operation('START', service=self.slave_service)
             sleep(5)
         else:
-            # self.set_device_theme(self.set_theme_pkg, 'vlife')
+            self.set_device_theme(self.set_theme_pkg, 'vlife')
             pass
 
     def close_app(self):
@@ -410,7 +410,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,False)
+        self.assertEqual(self.result,True)
 
     def test_104_lockscreen_WIFIOPEN_SCREEN_OFF_ON2(self):
 
@@ -474,7 +474,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_start(self.slave_main_process, '')
         sleep(2)
         # 更新时间到两小时后
-        DEVICE.update_android_time(2)
+        DEVICE.update_android_time(1)
         sleep(1)
         DEVICE.gprs_operation('OFF')
         sleep(15)
@@ -514,7 +514,7 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('ON')
         sleep(3)
         DEVICE.screen_on_off('ON')
-        sleep(30)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -613,7 +613,7 @@ class TestTask(unittest.TestCase):
         DEVICE.screen_on_off('ON')
         sleep(1)
         DEVICE.emulate_swipe_action()
-        sleep(30)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -695,7 +695,7 @@ class TestTask(unittest.TestCase):
         DEVICE.gprs_operation('OFF')
         sleep(15)
         DEVICE.wifi_operation('ON')
-        sleep(40)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -718,7 +718,7 @@ class TestTask(unittest.TestCase):
         DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('ON')
-        sleep(40)
+        sleep(60)
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
@@ -841,7 +841,7 @@ class TestTask(unittest.TestCase):
         sleep(3)
 
         DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
+        sleep(2)
         self.dump_log_start(self.master_service,'')
         DEVICE.wifi_operation('OFF')
         sleep(60)
@@ -943,9 +943,9 @@ class TestTask(unittest.TestCase):
         DEVICE.wifi_operation('ON')
         sleep(3)
 
-        DEVICE.update_android_time(1,interval_unit='day')
-        sleep(1)
         self.dump_log_start(self.slave_main_process,'')
+        sleep(2)
+        DEVICE.update_android_time(1,interval_unit='day')
         sleep(1)
         DEVICE.wifi_operation('OFF')
         sleep(3)
@@ -954,7 +954,7 @@ class TestTask(unittest.TestCase):
         self.dump_log_stop()
 
         self.result = self.filter_log_result()
-        self.assertEqual(self.result,False)
+        self.assertEqual(self.result, True)
 
 
 def init_env():

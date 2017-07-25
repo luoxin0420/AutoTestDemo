@@ -14,6 +14,7 @@ from os import path
 import configuration
 import myglobal
 import uiautomator
+from library.myglobal import logger
 
 
 class Device(object):

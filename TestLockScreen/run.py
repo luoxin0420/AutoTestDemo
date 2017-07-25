@@ -12,8 +12,10 @@ from library import configuration
 from library import myglobal
 from testcases import test_startup_register
 from testcases import test_tasks
+from testcases import test_module_update
 
 if __name__ == '__main__':
+
 
     newParser = argparse.ArgumentParser()
 
@@ -50,6 +52,9 @@ if __name__ == '__main__':
                 test_startup_register.run(uid, loop_number, loop_type)
             if cases.startswith('test_tasks'):
                 test_tasks.run(uid, loop_number, loop_type)
+            if cases.startswith('test_module'):
+                myglobal.logger.debug('Start to test module')
+                test_module_update.run(uid, loop_number, loop_type, myglobal.logger)
 
     except Exception, ex:
         print ex
